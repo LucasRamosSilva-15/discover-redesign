@@ -76,10 +76,10 @@ DiscoverPage {
     Kirigami.CardsLayout {
         id: apps
 
-        maximumColumns: 4
-        rowSpacing: page.padding
-        columnSpacing: page.padding
-        maximumColumnWidth: Kirigami.Units.gridUnit * 6
+        maximumColumns: 2
+        rowSpacing: Kirigami.Units.largeSpacing
+        columnSpacing: Kirigami.Units.largeSpacing
+        maximumColumnWidth: Kirigami.Units.gridUnit * 22
 
         Rectangle {
             Layout.columnSpan: apps.columns
@@ -91,9 +91,19 @@ DiscoverPage {
             
             gradient: Gradient {
                 orientation: Gradient.Horizontal
-                GradientStop { position: 0.0; color: "#2563eb" } // blue-600
-                GradientStop { position: 0.5; color: "#0284c7" } // sky-600
-                GradientStop { position: 1.0; color: "#4338ca" } // indigo-700
+                GradientStop { position: 0.0; color: Kirigami.Theme.highlightColor }
+                GradientStop { position: 1.0; color: Qt.darker(Kirigami.Theme.highlightColor, 1.5) }
+            }
+            
+            Kirigami.Icon {
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.rightMargin: Kirigami.Units.largeSpacing * 4
+                implicitWidth: parent.height * 0.8
+                implicitHeight: parent.height * 0.8
+                source: "media-playback-start"
+                color: "white"
+                opacity: 0.15
             }
 
             ColumnLayout {
@@ -102,7 +112,7 @@ DiscoverPage {
                     left: parent.left
                     right: parent.right
                     verticalCenter: parent.verticalCenter
-                    margins: Kirigami.Units.largeSpacing * 2
+                    margins: Kirigami.Units.largeSpacing * 3
                 }
                 spacing: Kirigami.Units.smallSpacing
 
@@ -136,12 +146,14 @@ DiscoverPage {
 
         Kirigami.Heading {
             id: popHeading
-            // Need to undo some the row spacing of the parent layout which looks bad here
-            Layout.bottomMargin: -(apps.rowSpacing / 2)
+            Layout.topMargin: Kirigami.Units.largeSpacing
+            Layout.bottomMargin: Kirigami.Units.smallSpacing
             Layout.columnSpan: apps.columns
             Layout.fillWidth: true
             text: i18nc("@title:group", "Most Popular")
             wrapMode: Text.Wrap
+            level: 2
+            font.weight: Font.Bold
             visible: popRep.count > 0 && !featuredModel.isFetching
         }
 
@@ -186,13 +198,14 @@ DiscoverPage {
 
         Kirigami.Heading {
             id: featuredHeading
-            Layout.topMargin: page.padding
-            // Need to undo some the row spacing of the parent layout which looks bad here
-            Layout.bottomMargin: -(apps.rowSpacing / 2)
+            Layout.topMargin: Kirigami.Units.largeSpacing
+            Layout.bottomMargin: Kirigami.Units.smallSpacing
             Layout.columnSpan: apps.columns
             Layout.fillWidth: true
             text: i18nc("@title:group", "Editor’s Choice")
             wrapMode: Text.Wrap
+            level: 2
+            font.weight: Font.Bold
             visible: featuredRep.count > 0 && !featuredModel.isFetching
         }
 

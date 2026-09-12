@@ -25,6 +25,15 @@ BasicAbstractCard {
     property bool showSize: false
     property bool showInstallButton: !compact
 
+    // Remove the hard visual border (linhas visuais) and add a soft shadow like the prototype
+    background: Kirigami.ShadowedRectangle {
+        color: Kirigami.Theme.backgroundColor
+        radius: Kirigami.Units.smallSpacing * 3
+        shadow.size: 8
+        shadow.color: Qt.rgba(0, 0, 0, 0.05)
+        shadow.yOffset: 2
+    }
+
     readonly property bool compact: !applicationWindow().wideScreen
     readonly property int appIconSize: Kirigami.Units.iconSizes.large
     readonly property bool appIsFromNonDefaultBackend: Discover.ResourcesModel.currentApplicationBackend !== application.backend && application.backend.hasApplications
