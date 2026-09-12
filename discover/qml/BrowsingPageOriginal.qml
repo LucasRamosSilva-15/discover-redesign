@@ -81,59 +81,6 @@ DiscoverPage {
         columnSpacing: page.padding
         maximumColumnWidth: Kirigami.Units.gridUnit * 6
 
-        Rectangle {
-            Layout.columnSpan: apps.columns
-            Layout.fillWidth: true
-            Layout.bottomMargin: Kirigami.Units.largeSpacing
-            implicitHeight: bannerCol.implicitHeight + Kirigami.Units.largeSpacing * 4
-            radius: 12 // Tailwind rounded-2xl
-            visible: !featuredModel.isFetching
-            
-            gradient: Gradient {
-                orientation: Gradient.Horizontal
-                GradientStop { position: 0.0; color: "#2563eb" } // blue-600
-                GradientStop { position: 0.5; color: "#0284c7" } // sky-600
-                GradientStop { position: 1.0; color: "#4338ca" } // indigo-700
-            }
-
-            ColumnLayout {
-                id: bannerCol
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    verticalCenter: parent.verticalCenter
-                    margins: Kirigami.Units.largeSpacing * 2
-                }
-                spacing: Kirigami.Units.smallSpacing
-
-                QQC2.Label {
-                    Layout.fillWidth: true
-                    text: i18nc("@info", "★ DESTAQUE DA SEMANA")
-                    font.weight: Font.Bold
-                    font.pixelSize: Math.round(Kirigami.Theme.defaultFont.pixelSize * 0.8)
-                    color: "white"
-                    opacity: 0.9
-                }
-
-                Kirigami.Heading {
-                    Layout.fillWidth: true
-                    text: i18nc("@title", "Descubra Aplicativos Livres")
-                    level: 1
-                    color: "white"
-                    wrapMode: Text.WordWrap
-                    font.weight: Font.Bold
-                }
-
-                QQC2.Label {
-                    Layout.fillWidth: true
-                    text: i18nc("@info", "Explore milhares de ferramentas confiáveis, empacotadas nativamente ou via Flatpak & Snap para o seu desktop Linux.")
-                    wrapMode: Text.WordWrap
-                    color: "#e0f2fe" // blue-100
-                    font.pixelSize: Math.round(Kirigami.Theme.defaultFont.pixelSize * 0.9)
-                }
-            }
-        }
-
         Kirigami.Heading {
             id: popHeading
             // Need to undo some the row spacing of the parent layout which looks bad here

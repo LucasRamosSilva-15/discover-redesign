@@ -1,55 +1,10 @@
-/*
- *   SPDX-FileCopyrightText: 2012 Aleix Pol Gonzalez <aleixpol@blue-systems.com>
- *   SPDX-FileCopyrightText: 2018-2026 Nate Graham <nate@kde.org>
- *   SPDX-FileCopyrightText: 2021 Carl Schwan <carlschwan@kde.org>
- *   SPDX-FileCopyrightText: 2023 ivan tkachenko <me@ratijas.tk>
- *
- *   SPDX-License-Identifier: LGPL-2.0-or-later
- */
+const fs = require('fs');
+const path = require('path');
 
-pragma ComponentBehavior: Bound
+const targetPath = path.resolve('discover/qml/ApplicationDelegate.qml');
+let content = fs.readFileSync(targetPath, 'utf-8');
 
-import QtQuick
-import QtQuick.Controls as QQC2
-import QtQuick.Layouts
-import org.kde.discover as Discover
-import org.kde.kirigami as Kirigami
-
-BasicAbstractCard {
-    id: root
-
-    required property int index
-    required property Discover.AbstractResource application
-
-    property bool showRating: true
-    property bool showSize: false
-    property bool showInstallButton: !compact
-
-    readonly property bool compact: !applicationWindow().wideScreen
-    readonly property int appIconSize: Kirigami.Units.iconSizes.large
-    readonly property bool appIsFromNonDefaultBackend: Discover.ResourcesModel.currentApplicationBackend !== application.backend && application.backend.hasApplications
-    readonly property int nonDefaultBackendLogoSize: Kirigami.Units.iconSizes.smallMedium
-    readonly property int maximumLineCount: compact ? 3 : 4
-
-    showClickFeedback: true
-    activeFocusOnTab: true
-    highlighted: focus
-
-    Accessible.name: application.name
-    Accessible.role: Accessible.ListItem
-    Accessible.onPressAction: trigger()
-    onClicked: trigger()
-
-    function trigger() {
-        ListView.currentIndex = index
-        Navigation.openApplication(application)
-    }
-
-    QQC2.ToolTip.text: "<b>" + appName.text + "</b><br/>" + appDescription.text
-    QQC2.ToolTip.visible: (hovered || activeFocus) && (appName.truncated || appDescription.truncated)
-    QQC2.ToolTip.delay: Kirigami.Units.toolTipDelay
-
-    
+const replacement = `
     content: RowLayout {
         spacing: Kirigami.Units.largeSpacing
 
@@ -201,11 +156,21 @@ BasicAbstractCard {
             }
         }
     }
+`;
 
-
-    onFocusChanged: {
-        if (focus) {
-            page.ensureVisible(root)
-        }
+const startIndex = content.indexOf('content: RowLayout {');
+if (startIndex !== -1) {
+    const endBlock = 'onFocusChanged: {\n        if (focus) {\n            page.ensureVisible(root)\n        }\n    }';
+    const endIndex = content.lastIndexOf(endBlock);
+    
+    if (endIndex !== -1) {
+        const newContent = content.substring(0, startIndex) + replacement + '\n\n    ' + content.substring(endIndex);
+        fs.writeFileSync(targetPath, newContent, 'utf-8');
+        console.log("Replaced ApplicationDelegate.qml successfully.");
+    } else {
+        console.log("Could not find end block");
     }
+} else {
+    console.log("Could not find start block");
 }
+
