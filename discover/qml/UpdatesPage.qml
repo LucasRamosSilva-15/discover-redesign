@@ -370,30 +370,58 @@ DiscoverPage {
             }
         }
     }
-    ListView {
+    GridView {
         id: updatesView
         currentIndex: -1
-        reuseItems: true
         clip: true
-        
+
+        leftMargin: Kirigami.Units.largeSpacing * 2
+        rightMargin: Kirigami.Units.largeSpacing * 2
+        topMargin: Kirigami.Units.largeSpacing
+        bottomMargin: Kirigami.Units.largeSpacing * 2
+
+        readonly property int availableWidth: Math.max(1, width - leftMargin - rightMargin)
+        readonly property int columnsCount: availableWidth > Kirigami.Units.gridUnit * 50 ? 3 : (availableWidth > Kirigami.Units.gridUnit * 30 ? 2 : 1)
+        cellWidth: Math.floor(availableWidth / columnsCount)
+        cellHeight: Math.round(Kirigami.Units.gridUnit * 5.8)
+
+        activeFocusOnTab: true
+        onActiveFocusChanged: {
+            if (activeFocus && currentIndex === -1) {
+                currentIndex = 0
+            }
+        }
+
+        Accessible.role: Accessible.List
+
+        model: KItemModels.KSortFilterProxyModel {
+            sourceModel: updateModel
+            sortRole: Discover.UpdateModel.SectionResourceProgressRole
+            filterRoleName: "resourceStateIsDone"
+            filterString: "false"
+        }
+
         header: Item {
-            width: updatesView.width
-            height: heroBanner.height + Kirigami.Units.largeSpacing * 3
-            
+            id: heroBannerWrapper
+            width: updatesView.availableWidth
+            height: heroBanner.height + Kirigami.Units.largeSpacing * 2
+
             Rectangle {
                 id: heroBanner
-                width: Math.min(parent.width - Kirigami.Units.largeSpacing * 4, 1024)
-                x: Math.max(Kirigami.Units.largeSpacing * 2, (parent.width - width) / 2)
-                y: Kirigami.Units.largeSpacing
+                width: parent.width
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                anchors.topMargin: Kirigami.Units.largeSpacing
                 height: Math.max(Kirigami.Units.gridUnit * 6, heroLayout.implicitHeight + Kirigami.Units.largeSpacing * 2)
                 radius: Kirigami.Units.largeSpacing
-                
+                clip: true
+
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
                     GradientStop { position: 0.0; color: "#f59e0b" } // amber-500
                     GradientStop { position: 1.0; color: "#ea580c" } // orange-600
                 }
-                
+
                 // Faded background icon
                 Kirigami.Icon {
                     source: "view-refresh"
@@ -407,7 +435,7 @@ DiscoverPage {
                     isMask: true
                     opacity: 0.1
                 }
-                
+
                 RowLayout {
                     id: heroLayout
                     anchors.left: parent.left
@@ -415,14 +443,14 @@ DiscoverPage {
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.margins: Kirigami.Units.largeSpacing * 1.5
                     spacing: Kirigami.Units.largeSpacing * 1.5
-                    
+
                     Rectangle {
                         Layout.preferredWidth: Kirigami.Units.iconSizes.huge * 1.2
                         Layout.preferredHeight: Kirigami.Units.iconSizes.huge * 1.2
                         radius: Kirigami.Units.largeSpacing
                         color: Qt.rgba(1, 1, 1, 0.15)
                         border.color: Qt.rgba(1, 1, 1, 0.2)
-                        
+
                         Kirigami.Icon {
                             anchors.centerIn: parent
                             width: Kirigami.Units.iconSizes.huge * 0.7
@@ -432,7 +460,7 @@ DiscoverPage {
                             color: "white"
                         }
                     }
-                    
+
                     ColumnLayout {
                         spacing: Kirigami.Units.smallSpacing
                         Kirigami.Heading {
@@ -452,134 +480,78 @@ DiscoverPage {
             }
         }
 
-        activeFocusOnTab: true
-        onActiveFocusChanged: {
-            if (activeFocus && currentIndex === -1) {
-                currentIndex = 0
-            }
-        }
-
-        Accessible.role: Accessible.List
-
-        model: KItemModels.KSortFilterProxyModel {
-            sourceModel: updateModel
-            sortRole: Discover.UpdateModel.SectionResourceProgressRole
-            filterRoleName: "resourceStateIsDone"
-            filterString: "false"
-        }
-
-        section {
-            property: "section"
-            delegate: Item {
-                required property string section
-                
-                width: updatesView.width
-                height: sectionLabel.implicitHeight + Kirigami.Units.largeSpacing * 2
-                
-                QQC2.Label {
-                    id: sectionLabel
-                    text: section
-                    font.bold: true
-                    font.capitalization: Font.AllUppercase
-                    font.pixelSize: Kirigami.Theme.smallFont.pixelSize
-                    color: Kirigami.Theme.disabledTextColor
-                    width: Math.min(updatesView.width - Kirigami.Units.largeSpacing * 4, 1024)
-                    x: Math.max(Kirigami.Units.largeSpacing * 2, (updatesView.width - width) / 2)
-                    anchors.bottom: parent.bottom
-                    anchors.bottomMargin: Kirigami.Units.smallSpacing
-                }
-            }
-        }
-
         delegate: Item {
             id: delegateRoot
-            width: updatesView.width
-            height: listItem.implicitHeight + Kirigami.Units.smallSpacing
+            width: updatesView.cellWidth
+            height: updatesView.cellHeight
 
             // type: roles of Discover.UpdateModel
             required property var model
             required property int index
-            required property bool extended
 
             QQC2.ItemDelegate {
                 id: listItem
+                anchors.fill: parent
+                anchors.margins: Kirigami.Units.smallSpacing
 
-                width: Math.min(delegateRoot.width - Kirigami.Units.largeSpacing * 4, 1024)
-                x: Math.max(Kirigami.Units.largeSpacing * 2, (delegateRoot.width - width) / 2)
-                y: Kirigami.Units.smallSpacing / 2
-                
+                leftPadding: Kirigami.Units.largeSpacing * 1.25
+                rightPadding: Kirigami.Units.largeSpacing * 1.25
+                topPadding: Kirigami.Units.largeSpacing
+                bottomPadding: Kirigami.Units.largeSpacing
+
                 property var model: delegateRoot.model
                 property int index: delegateRoot.index
-                property bool extended: delegateRoot.extended
-                
+
                 // Normal background, each item is a separate card
                 background: Rectangle {
                     id: cardBg
-                    color: Kirigami.Theme.viewBackgroundColor
-                    border.color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.15)
-                    radius: Kirigami.Units.largeSpacing
+                    color: listItem.hovered
+                        ? Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.highlightColor, Kirigami.Theme.backgroundColor, 0.05)
+                        : Kirigami.Theme.backgroundColor
+                    border.color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.12)
+                    border.width: 1
+                    radius: 8
                 }
 
-            highlighted: false
-            focus: ListView.isCurrentItem
-            activeFocusOnTab: ListView.isCurrentItem
-            checked: itemChecked.checked
+                highlighted: false
+                focus: updatesView.currentIndex === index
+                activeFocusOnTab: focus
+                checked: itemChecked.checked
 
-            Accessible.name: model.display
-            Accessible.description: model.resource?.upgradeText ?? ""
-            Accessible.role: Accessible.ListItem
+                Accessible.name: model.display
+                Accessible.description: model.resource?.upgradeText ?? ""
+                Accessible.role: Accessible.ListItem
 
-            onEnabledChanged: if (!enabled) {
-                model.extended = false;
-            }
-
-            Keys.onSpacePressed: event => {
-                itemChecked.clicked();
-            }
-            Keys.onReturnPressed: event => {
-                model.extended = !model.extended;
-            }
-            Keys.onPressed: event => {
-                if (event.key === Qt.Key_Alt) {
-                    model.extended = true;
+                Keys.onSpacePressed: event => {
+                    itemChecked.clicked();
                 }
-            }
-            Keys.onReleased: event => {
-                if (event.key === Qt.Key_Alt) {
-                    model.extended = false;
-                }
-            }
-
-            Component.onCompleted: {
-                if (extended) {
-                    updateModel.fetchUpdateDetails(index)
-                    if (ListView.isCurrentItem) {
-                        forceActiveFocus(Qt.OtherFocusReason)
+                Keys.onReturnPressed: event => {
+                    if (listItem.model.resource) {
+                        Navigation.openApplication(listItem.model.resource);
                     }
                 }
-            }
-            onExtendedChanged: if (extended) {
-                updateModel.fetchUpdateDetails(index)
-            } else {
-                moreInformationButton.focus = false
-            }
 
-            contentItem: ColumnLayout {
-                id: delegateLayout
+                onClicked: {
+                    if (listItem.model.resource) {
+                        Navigation.openApplication(listItem.model.resource);
+                    }
+                }
 
-                readonly property int extraContentLeadingMargin:
-                    itemChecked.implicitWidth
-                    + itemIcon.implicitWidth
-                    + nameAndVersionColumn.Layout.leftMargin
-                    + (mainRow.spacing * 2)
+                QQC2.ToolTip.text: {
+                    let tip = "<b>" + listItem.model.display + "</b>"
+                    if (listItem.model.resource?.upgradeText) {
+                        tip += "<br/>" + listItem.model.resource.upgradeText
+                    }
+                    if (listItem.model.resource?.backend?.displayName) {
+                        tip += "<br/><i>" + listItem.model.resource.backend.displayName + "</i>"
+                    }
+                    return tip
+                }
+                QQC2.ToolTip.visible: (listItem.hovered || listItem.activeFocus) && (appNameHeading.truncated || versionLabel.truncated)
 
-                spacing: Kirigami.Units.smallSpacing
-
-                RowLayout {
+                contentItem: RowLayout {
                     id: mainRow
                     spacing: Kirigami.Units.largeSpacing
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
 
                     QQC2.CheckBox {
                         id: itemChecked
@@ -591,17 +563,18 @@ DiscoverPage {
                     }
 
                     Rectangle {
-                        Layout.preferredWidth: Kirigami.Units.iconSizes.huge
-                        Layout.preferredHeight: Kirigami.Units.iconSizes.huge
-                        radius: Kirigami.Units.largeSpacing
+                        id: itemIconContainer
+                        Layout.preferredWidth: 44
+                        Layout.preferredHeight: 44
+                        radius: 10
                         color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.05)
                         border.color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.1)
 
                         Kirigami.Icon {
                             id: itemIcon
                             anchors.centerIn: parent
-                            width: Kirigami.Units.iconSizes.large
-                            height: Kirigami.Units.iconSizes.large
+                            width: 32
+                            height: 32
                             source: listItem.model.decoration
                             selected: listItem.down
                             smooth: true
@@ -611,13 +584,12 @@ DiscoverPage {
                     ColumnLayout {
                         id: nameAndVersionColumn
                         Layout.fillWidth: true
-                        Layout.leftMargin: Kirigami.Units.smallSpacing
                         Layout.alignment: Qt.AlignVCenter
-
-                        spacing: 0
+                        spacing: 2
 
                         // App name
                         Kirigami.Heading {
+                            id: appNameHeading
                             Layout.fillWidth: true
                             text: listItem.model.display
                             level: 4
@@ -628,99 +600,34 @@ DiscoverPage {
 
                         // Version numbers
                         QQC2.Label {
+                            id: versionLabel
                             Layout.fillWidth: true
                             elide: truncated ? Text.ElideLeft : Text.ElideRight
                             text: listItem.model.resource?.upgradeText ?? ""
-                            color: listItem.down ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
-                            opacity: 0.75
+                            font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+                            color: listItem.down ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.disabledTextColor
                         }
                     }
 
                     Rectangle {
-                        Layout.minimumWidth: Kirigami.Units.gridUnit * 5
-                        Layout.preferredHeight: sizeLabel.implicitHeight + Kirigami.Units.smallSpacing * 2
-                        radius: Kirigami.Units.smallSpacing
                         color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.05)
-                        
+                        border.width: 1
+                        border.color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.1)
+                        radius: 8
+                        implicitHeight: sizeLabel.implicitHeight + Kirigami.Units.smallSpacing * 1.5
+                        implicitWidth: sizeLabel.implicitWidth + Kirigami.Units.largeSpacing
+
                         QQC2.Label {
                             id: sizeLabel
                             anchors.centerIn: parent
                             text: listItem.model.resourceState === 2 ? i18n("Installing") : listItem.model.size
-                            font.bold: true
-                            font.pixelSize: Kirigami.Theme.smallFont.pixelSize
-                            color: Kirigami.Theme.disabledTextColor
+                            font: Kirigami.Theme.smallFont
+                            color: Kirigami.Theme.textColor
+                            opacity: 0.7
                         }
                     }
                 }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.leftMargin: delegateLayout.extraContentLeadingMargin
-                    spacing: 0
-                    visible: listItem.model.extended
-
-                    QQC2.Label {
-                        Layout.alignment: Qt.AlignTop
-                        Layout.rightMargin: Kirigami.Units.smallSpacing
-                        text: i18nc("@info This update is from the following source", "From:")
-                        color: listItem.down ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
-                        opacity: 0.75
-                    }
-                    // Backend icon
-                    Kirigami.Icon {
-                        Layout.alignment: Qt.AlignTop
-                        source: listItem.model.resource.sourceIcon
-                        implicitWidth: Kirigami.Units.iconSizes.smallMedium
-                        implicitHeight: Kirigami.Units.iconSizes.smallMedium
-                        selected: listItem.down
-                    }
-                    // Backend label and origin/remote
-                    QQC2.Label {
-                        Layout.fillWidth: true
-                        Layout.alignment: Qt.AlignTop
-                        text: listItem.model.resource.origin.length === 0 ? listItem.model.resource.backend.displayName
-                                : i18nc("%1 is the backend that provides this app, %2 is the specific repository or address within that backend","%1 (%2)",
-                                        listItem.model.resource.backend.displayName, listItem.model.resource.origin)
-                        wrapMode: Text.Wrap
-                        maximumLineCount: 2
-                        elide: Text.ElideRight
-                        color: listItem.down ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
-                        opacity: 0.75
-                    }
-
-                    QQC2.Button {
-                        id: moreInformationButton
-                        Layout.alignment: Qt.AlignRight
-                        text: i18nc("@action:button minimize the length of this label", "More Info…")
-                        onClicked: Navigation.openApplication(listItem.model.resource)
-                    }
-                }
-
-                QQC2.Frame {
-                    Layout.fillWidth: true
-                    Layout.leftMargin: delegateLayout.extraContentLeadingMargin
-                    implicitHeight: view.implicitHeight
-                    visible: listItem.model.extended && listItem.model.changelog.length > 0
-                    QQC2.Label {
-                        id: view
-                        anchors {
-                            right: parent.right
-                            left: parent.left
-                        }
-                        text: listItem.model.changelog
-                        textFormat: Text.StyledText
-                        wrapMode: Text.WordWrap
-                        color: listItem.down ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
-                        onLinkActivated: link => Qt.openUrlExternally(link)
-
-                    }
-                }
-            }
-
-            onClicked: {
-                model.extended = !model.extended
-            }
-        } // QQC2.ItemDelegate
+            } // QQC2.ItemDelegate
         } // Item (delegateRoot)
     }
 
