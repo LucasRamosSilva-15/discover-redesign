@@ -186,14 +186,105 @@ DiscoverPage {
 
     Kirigami.CardsListView {
         id: appsView
+        
+        headerPositioning: ListView.InlineHeader
         footerPositioning: ListView.InlineFooter
+        
         activeFocusOnTab: true
         currentIndex: -1
         focus: true
+        
+        header: Item {
+            id: heroBannerWrapper
+            width: appsView.width - appsView.leftMargin - appsView.rightMargin
+            height: visible ? heroBannerItem.height + Kirigami.Units.largeSpacing * 2 : 0
+            visible: page.name !== "" && !page.searchPage && page.stateFilter !== Discover.AbstractResource.Installed // Only show for categories
+            
+            Rectangle {
+                id: heroBannerItem
+                width: Math.min(parent.width, 1024)
+                height: bannerLayout.implicitHeight + Kirigami.Units.largeSpacing * 4
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: parent.top
+                anchors.topMargin: Kirigami.Units.largeSpacing
+                radius: Kirigami.Units.largeSpacing
+                clip: true
+                
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0.0; color: "#2563eb" } // blue-600
+                    GradientStop { position: 0.5; color: "#0284c7" } // sky-600
+                    GradientStop { position: 1.0; color: "#4338ca" } // indigo-700
+                }
+                
+                Kirigami.Icon {
+                    source: page.iconName
+                    width: Kirigami.Units.iconSizes.huge * 2
+                    height: width
+                    anchors {
+                        right: parent.right
+                        rightMargin: -width / 4
+                        bottom: parent.bottom
+                        bottomMargin: -height / 4
+                    }
+                    color: "white"
+                    opacity: 0.15
+                }
+                
+                RowLayout {
+                    id: bannerLayout
+                    anchors {
+                        left: parent.left
+                        right: parent.right
+                        top: parent.top
+                        margins: Kirigami.Units.largeSpacing * 2
+                    }
+                    spacing: Kirigami.Units.largeSpacing * 1.5
+                    
+                    Rectangle {
+                        implicitWidth: Kirigami.Units.iconSizes.large + Kirigami.Units.largeSpacing * 2
+                        implicitHeight: implicitWidth
+                        radius: Kirigami.Units.largeSpacing
+                        color: "white"
+                        opacity: 0.2
+                        
+                        Kirigami.Icon {
+                            anchors.centerIn: parent
+                            width: Kirigami.Units.iconSizes.large
+                            height: width
+                            source: page.iconName
+                            color: "white"
+                        }
+                    }
+                    
+                    ColumnLayout {
+                        spacing: Kirigami.Units.smallSpacing
+                        Layout.fillWidth: true
+                        
+                        Kirigami.Heading {
+                            text: page.name
+                            level: 1
+                            font.weight: Font.Bold
+                            color: "white"
+                        }
+                        
+                        QQC2.Label {
+                            text: page.categoryObject && page.categoryObject.comment ? page.categoryObject.comment : i18n("Explore milhares de ferramentas confiáveis para o seu desktop.")
+                            color: "white"
+                            opacity: 0.9
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                            font.pixelSize: Kirigami.Theme.defaultFont.pixelSize * 1.1
+                        }
+                    }
+                }
+            }
+        }
+        
         footer: Item {
             id: appViewFooter
             height: appsModel.busy ? Kirigami.Units.gridUnit * 8 : Kirigami.Units.gridUnit
-            width: parent.width
+            width: appsView.width
         }
         onActiveFocusChanged: if (activeFocus && currentIndex === -1) {
             currentIndex = 0;

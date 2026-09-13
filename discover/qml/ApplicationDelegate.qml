@@ -208,7 +208,7 @@ BasicAbstractCard {
             Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
             sourceComponent: InstallApplicationButton {
                 application: root.application
-                installOrRemoveButtonDisplayStyle: QQC2.AbstractButton.IconOnly
+                installOrRemoveButtonDisplayStyle: QQC2.AbstractButton.TextBesideIcon
             }
         }
     }
