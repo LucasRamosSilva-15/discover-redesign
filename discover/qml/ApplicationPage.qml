@@ -636,7 +636,7 @@ DiscoverPage {
                         spacing: Kirigami.Units.largeSpacing
 
                         Kirigami.Heading {
-                            text: i18nc("@title", "Permissions")
+                            text: i18ndc("libdiscover", "Permission to access system resources and hardware devices", "Permissions")
                             level: 3
                             font.weight: Font.Bold
                             color: Kirigami.Theme.textColor

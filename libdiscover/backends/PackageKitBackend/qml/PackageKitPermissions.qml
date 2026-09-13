@@ -19,6 +19,7 @@ ColumnLayout {
     spacing: Kirigami.Units.smallSpacing
 
     Kirigami.Heading {
+        visible: false
         Layout.fillWidth: true
         text: i18ndc("libdiscover", "Permission to access system resources and hardware devices", "Permissions")
         level: 2

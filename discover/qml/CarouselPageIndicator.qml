@@ -47,6 +47,23 @@ MouseArea {
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter
+
+        delegate: Rectangle {
+            required property int index
+
+            implicitWidth: index === root.currentIndex ? 18 : 6
+            implicitHeight: 6
+            radius: 3
+            color: "#ffffff"
+            opacity: index === root.currentIndex ? 1.0 : 0.35
+
+            Behavior on opacity {
+                NumberAnimation { duration: 150 }
+            }
+            Behavior on implicitWidth {
+                NumberAnimation { duration: 150 }
+            }
+        }
     }
 
     onPressed: event => {
