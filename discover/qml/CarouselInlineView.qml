@@ -59,19 +59,19 @@ T.Control {
             clip: true
             pixelAligned: true
             orientation: ListView.Horizontal
-            snapMode: ListView.SnapToItem
+            snapMode: ListView.SnapOneItem
             highlightRangeMode: ListView.StrictlyEnforceRange
 
-            displayMarginBeginning: root.edgeMargin
-            displayMarginEnd: root.edgeMargin
+            displayMarginBeginning: 0
+            displayMarginEnd: 0
 
-            preferredHighlightBegin: currentItem ? Math.round((width - currentItem.width) / 2) : 0
-            preferredHighlightEnd: currentItem ? preferredHighlightBegin + currentItem.width : 0
+            preferredHighlightBegin: 0
+            preferredHighlightEnd: width
 
             highlightMoveDuration: Kirigami.Units.longDuration
             highlightResizeDuration: Kirigami.Units.longDuration
 
-            spacing: Kirigami.Units.gridUnit
+            spacing: 0
             cacheBuffer: 10000
 
             currentIndex: root.currentIndex
@@ -93,6 +93,7 @@ T.Control {
             }
 
             delegate: CarouselDelegate {
+                width: view.width
                 onActivated: {
                     if (root.currentIndex === index) {
                         controller.open(root.Window.window, root.carouselModel, index);
@@ -108,7 +109,7 @@ T.Control {
                 Kirigami.Theme.colorSet: Kirigami.Theme.Button
 
                 view: view
-                edgeMargin: root.edgeMargin
+                edgeMargin: Kirigami.Units.largeSpacing
             }
         }
 

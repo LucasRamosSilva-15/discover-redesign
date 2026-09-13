@@ -1,5 +1,6 @@
 /*
  *   SPDX-FileCopyrightText: 2023 Marco Martin <mart@kde.org>
+ *   SPDX-FileCopyrightText: 2026 Lucas Ramos <lucasramos@kde.org>
  *
  *   SPDX-License-Identifier: LGPL-2.0-or-later
  */
@@ -14,7 +15,7 @@ import org.kde.discover.app as DiscoverApp
 import org.kde.kirigami as Kirigami
 import org.kde.kitemmodels as KItemModels
 
-BasicAbstractCard {
+Rectangle {
     id: root
 
     required property Discover.AbstractResource application
@@ -23,209 +24,256 @@ BasicAbstractCard {
     required property int visibleReviews
     required property bool compact
 
-    content: GridLayout {
-        rows: root.compact ? 6 : 5
-        columns: root.compact ? 2 : 3
-        flow: GridLayout.TopToBottom
-        rowSpacing: 0
-        columnSpacing: Kirigami.Units.largeSpacing
+    property bool canShowAllReviews: false
+    property bool canWriteReview: false
+    property bool isInstalled: false
+
+    signal showAllReviewsRequested()
+    signal writeReviewRequested()
+
+    radius: 16
+    color: Kirigami.Theme.backgroundColor
+    border.color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.12)
+    border.width: 1
+
+    implicitHeight: mainCol.implicitHeight + Kirigami.Units.largeSpacing * 3
+
+    ColumnLayout {
+        id: mainCol
+        anchors.fill: parent
+        anchors.margins: Kirigami.Units.largeSpacing * 1.5
+        spacing: Kirigami.Units.largeSpacing * 1.2
 
         Kirigami.Heading {
+            text: i18nc("@title", "Reviews")
+            level: 3
+            font.weight: Font.Bold
+            color: Kirigami.Theme.textColor
+        }
+
+        RowLayout {
             Layout.fillWidth: true
-            Layout.maximumWidth: globalRating.implicitWidth
-            Layout.fillHeight: true
-            Layout.rowSpan: 3
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-            minimumPointSize: 10
-            font.pointSize: 70
-            fontSizeMode: Text.Fit
-            text: (Math.min(10, root.application.rating.rating) / 2.0).toFixed(1)
-        }
-        Rating {
-            id: globalRating
-            Layout.alignment: Qt.AlignCenter
-            value: root.application.rating.rating
-            precision: Rating.Precision.HalfStar
-        }
-        QQC2.Label {
-            Layout.alignment: Qt.AlignCenter
-            text: i18nc("how many reviews", "%1 reviews", root.application.rating.ratingCount)
-        }
-        Repeater {
-            model: [5, 4, 3, 2, 1]
-            delegate: RowLayout {
-                id: delegate
+            spacing: Kirigami.Units.largeSpacing * 2
 
-                required property int index
-                required property string modelData
+            // Big Score column
+            ColumnLayout {
+                Layout.alignment: Qt.AlignVCenter
+                Layout.preferredWidth: 120
+                spacing: 2
 
-                Layout.fillWidth: true
-                Layout.preferredHeight: Math.ceil(Math.max(globalRating.height, implicitHeight))
-                Layout.row: index
-                Layout.column: 1
                 QQC2.Label {
-                    id: numberLabel
-                    text: modelData
-                    Layout.preferredWidth: Math.ceil(Math.max(implicitWidth, numberMetrics.width))
-                    Layout.alignment: Qt.AlignCenter
-                    horizontalAlignment: Text.AlignHCenter
-                    TextMetrics {
-                        id: numberMetrics
-                        font: numberLabel.font
-                        text: i18nc("widest character in the language", "M")
-                    }
+                    Layout.alignment: Qt.AlignHCenter
+                    text: (Math.min(10, root.application.rating ? root.application.rating.rating : 0) / 2.0).toFixed(1)
+                    font.pointSize: 42
+                    font.weight: Font.Bold
+                    color: Kirigami.Theme.textColor
                 }
-                QQC2.ProgressBar {
-                    Layout.fillWidth: true
-                    from: 0
-                    to: 1
-                    value: root.application.rating.starCounts[modelData] / root.application.rating.ratingCount
-                    // This is to make the progressbar right margin from the card edge exactly the same as the top one
-                    rightInset: topInset - Math.round((height - topInset - bottomInset) / 2) + Math.round((parent.height - height) / 2)
+
+                Rating {
+                    id: globalRating
+                    Layout.alignment: Qt.AlignHCenter
+                    value: root.application.rating ? root.application.rating.rating : 0
+                    precision: Rating.Precision.HalfStar
+                    starSize: 16
+                }
+
+                QQC2.Label {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: i18nc("how many reviews", "%1 reviews", root.application.rating ? root.application.rating.ratingCount : 0)
+                    color: Kirigami.Theme.disabledTextColor
+                    font.pointSize: Kirigami.Theme.smallFont.pointSize
+                }
+            }
+
+            // 5 Colored Bars column
+            ColumnLayout {
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignVCenter
+                spacing: 8
+
+                Repeater {
+                    model: [5, 4, 3, 2, 1]
+
+                    delegate: RowLayout {
+                        id: barRow
+                        required property int modelData
+
+                        Layout.fillWidth: true
+                        spacing: Kirigami.Units.largeSpacing
+
+                        QQC2.Label {
+                            text: barRow.modelData.toString()
+                            font.weight: Font.Medium
+                            color: Kirigami.Theme.disabledTextColor
+                            Layout.preferredWidth: 12
+                            horizontalAlignment: Text.AlignRight
+                        }
+
+                        Rectangle {
+                            id: barTrack
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 8
+                            radius: 4
+                            color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.08)
+                            clip: true
+
+                            readonly property real totalReviews: root.application.rating ? root.application.rating.ratingCount : 0
+                            readonly property real starCount: (root.application.rating && root.application.rating.starCounts && root.application.rating.starCounts[barRow.modelData] !== undefined)
+                                ? root.application.rating.starCounts[barRow.modelData]
+                                : 0
+                            readonly property real fraction: totalReviews > 0 ? Math.min(1.0, starCount / totalReviews) : 0
+
+                            readonly property color barColor: {
+                                switch (barRow.modelData) {
+                                case 5: return "#10b981"; // emerald-500
+                                case 4: return "#34d399"; // emerald-400
+                                case 3: return "#f59e0b"; // amber-500
+                                case 2: return "#f87171"; // rose-400
+                                case 1: return "#ef4444"; // rose-500
+                                default: return Kirigami.Theme.highlightColor;
+                                }
+                            }
+
+                            Rectangle {
+                                anchors.left: parent.left
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                width: Math.round(parent.width * barTrack.fraction)
+                                radius: 4
+                                color: barTrack.barColor
+
+                                Behavior on width {
+                                    NumberAnimation { duration: Kirigami.Units.longDuration; easing.type: Easing.OutCubic }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
-        ListView {
-            id: reviewsPreview
-            Layout.row: root.compact ? 5 : 0
-            Layout.column: root.compact ? 0 : 2
-            Layout.columnSpan: root.compact ? 2 : 1
-            Layout.rowSpan: 5
-            Layout.fillHeight: true
+
+        // Reviews Quotes preview (if available)
+        Rectangle {
             Layout.fillWidth: true
-            Layout.preferredWidth: Kirigami.Units.gridUnit * 18
-            Layout.preferredHeight: Kirigami.Units.gridUnit * 8
-            visible: count > 0
-            clip: true
-            orientation: ListView.Horizontal
-            currentIndex: 0
-            pixelAligned: true
-            snapMode: ListView.SnapToItem
-            highlightRangeMode: ListView.StrictlyEnforceRange
+            Layout.preferredHeight: 1
+            color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.08)
+            visible: reviewsPreview.visible && reviewsPreview.count > 0
+        }
 
-            displayMarginBeginning: 0
-            displayMarginEnd: 0
+        Item {
+            id: reviewsPreviewContainer
+            Layout.fillWidth: true
+            Layout.preferredHeight: Kirigami.Units.gridUnit * 5
+            visible: reviewsPreview.count > 0
 
-            preferredHighlightBegin: currentItem ? Math.round((width - currentItem.width) / 2) : 0
-            preferredHighlightEnd: currentItem ? preferredHighlightBegin + currentItem.width : 0
+            ListView {
+                id: reviewsPreview
+                anchors.fill: parent
+                visible: count > 0
+                clip: true
+                orientation: ListView.Horizontal
+                currentIndex: 0
+                pixelAligned: true
+                snapMode: ListView.SnapToItem
+                highlightRangeMode: ListView.StrictlyEnforceRange
 
-            highlightMoveDuration: Kirigami.Units.longDuration
-            highlightResizeDuration: Kirigami.Units.longDuration
+                preferredHighlightBegin: currentItem ? Math.round((width - currentItem.width) / 2) : 0
+                preferredHighlightEnd: currentItem ? preferredHighlightBegin + currentItem.width : 0
 
-            // Only show reviews here that someone cosidered useful to show
-            model: DiscoverApp.LimitedRowCountProxyModel {
-                sourceModel: KItemModels.KSortFilterProxyModel {
-                    id: sortModel
-                    sourceModel: root.model
-                    filterRoleName: "usefulnessFavorable"
-                    filterRowCallback: (sourceRow, sourceParent) => {
-                        const index = sourceModel.index(sourceRow, 0, sourceParent);
-                        const shouldShow = sourceModel.data(index, Discover.ReviewsModel.ShouldShow)
-                        return shouldShow === true && sourceModel.data(index, Discover.ReviewsModel.UsefulnessFavorable) > 0;
+                highlightMoveDuration: Kirigami.Units.longDuration
+                highlightResizeDuration: Kirigami.Units.longDuration
+
+                model: DiscoverApp.LimitedRowCountProxyModel {
+                    sourceModel: KItemModels.KSortFilterProxyModel {
+                        id: sortModel
+                        sourceModel: root.model
+                        filterRoleName: "usefulnessFavorable"
+                        filterRowCallback: (sourceRow, sourceParent) => {
+                            const index = sourceModel.index(sourceRow, 0, sourceParent);
+                            const shouldShow = sourceModel.data(index, Discover.ReviewsModel.ShouldShow);
+                            return shouldShow === true && sourceModel.data(index, Discover.ReviewsModel.UsefulnessFavorable) > 0;
+                        }
+                        onSortRoleNameChanged: sortOrder = Qt.DescendingOrder
                     }
-                    // need to do it afterwads as direct binding won't work, because at startup sortRoleName will be empty
-                    onSortRoleNameChanged: sortOrder = Qt.DescendingOrder
+                    pageSize: root.visibleReviews
                 }
-                pageSize: visibleReviews
-            }
-            delegate: Item {
-                id: delegate
 
-                required property string summary
-                required property string display
-                required property string reviewer
+                delegate: Item {
+                    id: delegateItem
 
-                width: reviewsPreview.width
-                height: reviewsPreview.height
+                    required property string summary
+                    required property string display
+                    required property string reviewer
 
-                ColumnLayout {
-                    anchors {
-                        left: parent.left
-                        right: parent.right
-                        verticalCenter: parent.verticalCenter
-                    }
-                    Kirigami.Heading {
-                        Layout.fillWidth: true
-                        Layout.alignment: Qt.AlignCenter
-                        horizontalAlignment: Text.AlignHCenter
-                        elide: Text.ElideRight
-                        text: delegate.summary
-                    }
-                    QQC2.Label {
-                        Layout.fillWidth: true
-                        Layout.alignment: Qt.AlignCenter
-                        horizontalAlignment: Text.AlignHCenter
-                        wrapMode: Text.WordWrap
-                        elide: Text.ElideRight
-                        maximumLineCount: 2
-                        text: delegate.display
-                    }
-                    QQC2.Label {
-                        Layout.alignment: Qt.AlignCenter
-                        opacity: 0.75
-                        text: delegate.reviewer || i18n("Unknown reviewer")
+                    width: reviewsPreview.width
+                    height: reviewsPreview.height
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: Kirigami.Units.smallSpacing
+                        spacing: 4
+
+                        Kirigami.Heading {
+                            Layout.fillWidth: true
+                            horizontalAlignment: Text.AlignHCenter
+                            elide: Text.ElideRight
+                            level: 4
+                            text: delegateItem.summary
+                        }
+                        QQC2.Label {
+                            Layout.fillWidth: true
+                            horizontalAlignment: Text.AlignHCenter
+                            wrapMode: Text.WordWrap
+                            elide: Text.ElideRight
+                            maximumLineCount: 2
+                            text: delegateItem.display
+                            font.italic: true
+                            color: Kirigami.Theme.disabledTextColor
+                        }
+                        QQC2.Label {
+                            Layout.alignment: Qt.AlignHCenter
+                            opacity: 0.75
+                            font.pointSize: Kirigami.Theme.smallFont.pointSize
+                            text: delegateItem.reviewer || i18n("Unknown reviewer")
+                        }
                     }
                 }
-            }
 
-            Timer {
-                running: root.visible && !reviewsPreview.moving
-                repeat: true
-                interval: 10000
-                onTriggered: reviewsPreview.currentIndex = (reviewsPreview.currentIndex + 1) % reviewsPreview.count
-            }
-
-            QQC2.Label {
-                id: openingQuote
-                anchors {
-                    left: parent.left
-                    top: parent.top
-                    topMargin: quoteMetrics.boundingRect.top - quoteMetrics.tightBoundingRect.top
-                }
-                parent: reviewsPreview
-                font.pointSize: Kirigami.Theme.defaultFont.pointSize * 4
-                text: i18nc("Opening upper air quote", "“")
-                opacity: 0.4
-                TextMetrics {
-                    id: quoteMetrics
-                    font: openingQuote.font
-                    text: openingQuote.text
+                Timer {
+                    running: root.visible && !reviewsPreview.moving && reviewsPreview.count > 1
+                    repeat: true
+                    interval: 10000
+                    onTriggered: reviewsPreview.currentIndex = (reviewsPreview.currentIndex + 1) % reviewsPreview.count
                 }
             }
-            QQC2.Label {
-                anchors {
-                    right: parent.right
-                    bottom: parent.bottom
-                }
-                parent: reviewsPreview
-                font.pointSize: Kirigami.Theme.defaultFont.pointSize * 4
-                text: i18nc("Closing lower air quote", "„")
-                opacity: 0.4
+        }
+
+        // Action Buttons at the bottom
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.08)
+            visible: root.canShowAllReviews || root.canWriteReview
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: Kirigami.Units.largeSpacing
+            visible: root.canShowAllReviews || root.canWriteReview
+
+            QQC2.Button {
+                visible: root.canShowAllReviews
+                text: i18nc("@action:button", "Show All Reviews")
+                icon.name: "view-visible"
+                onClicked: root.showAllReviewsRequested()
             }
-            RowLayout {
-                anchors {
-                    left: parent.left
-                    right: parent.right
-                    bottom: parent.bottom
-                }
-                parent: reviewsPreview
-                MouseArea {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    onClicked: reviewsPreview.currentIndex = Math.max(reviewsPreview.currentIndex - 1, 0)
-                }
-                QQC2.PageIndicator {
-                    count: reviewsPreview.count
-                    currentIndex: reviewsPreview.currentIndex
-                    interactive: true
-                    onCurrentIndexChanged: reviewsPreview.currentIndex = currentIndex
-                }
-                MouseArea {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    onClicked: reviewsPreview.currentIndex = Math.min(reviewsPreview.currentIndex + 1, reviewsPreview.count - 1)
-                }
+
+            QQC2.Button {
+                visible: root.canWriteReview
+                enabled: root.isInstalled
+                text: root.isInstalled ? i18n("Write a Review") : i18n("Install to Write a Review")
+                icon.name: "document-edit"
+                onClicked: root.writeReviewRequested()
             }
         }
     }

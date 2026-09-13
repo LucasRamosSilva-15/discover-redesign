@@ -252,67 +252,53 @@ DiscoverPage {
 
         anchors {
             top: parent.top
-            left: parent.left
-            right: parent.right
+            topMargin: Kirigami.Units.largeSpacing
+            horizontalCenter: parent.horizontalCenter
         }
-        spacing: appInfo.internalSpacings
+        width: Math.min(parent.width - Kirigami.Units.largeSpacing * 4, 1024)
+        spacing: Kirigami.Units.largeSpacing * 1.5
 
-        ApplicationPageStickyHeader {
-            id: stickyHeader
-            Layout.topMargin: -appInfo.topPadding
+        ApplicationPageFullComponent {
+            Layout.fillWidth: true
+            application: appInfo.application
+            availableFromOnlySingleSource: appInfo.availableFromOnlySingleSource
+            isOfflineUpgrade: appInfo.isOfflineUpgrade
+            isTechnicalPackage: appInfo.isTechnicalPackage
+            colorForLicenseType: (licenseType) => appInfo.colorForLicenseType(licenseType)
 
-            flickable: appInfo.flickable
-            color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, appImageColorExtractor.dominant, 0.1)
-
-            fullComponent: ApplicationPageFullComponent {
-                application: appInfo.application
-                availableFromOnlySingleSource: appInfo.availableFromOnlySingleSource
-                isOfflineUpgrade: appInfo.isOfflineUpgrade
-                isTechnicalPackage: appInfo.isTechnicalPackage
-                colorForLicenseType: (licenseType) => appInfo.colorForLicenseType(licenseType)
-
-                onOpenContentRatingDialog: contentRatingDialog.open()
-                onOpenLicenseDetailsDialog: (licenseType) => licenseDetailsDialog.openWithLicenseType(licenseType)
-                onOpenAllLicensesSheet: allLicensesSheet.open()
-            }
-
-            stickyComponent: ApplicationPageStickyComponent {
-                application: appInfo.application
-                availableFromOnlySingleSource: appInfo.availableFromOnlySingleSource
-                isOfflineUpgrade: appInfo.isOfflineUpgrade
-            }
+            onOpenContentRatingDialog: contentRatingDialog.open()
+            onOpenLicenseDetailsDialog: (licenseType) => licenseDetailsDialog.openWithLicenseType(licenseType)
+            onOpenAllLicensesSheet: allLicensesSheet.open()
         }
 
-        // Screenshots
+        // Screenshots Showcase
+        Rectangle {
+            id: showcaseCard
+            Layout.fillWidth: true
+            Layout.preferredHeight: Math.min(width * 9 / 21 + 50, 440)
+            Layout.minimumHeight: 240
+            radius: 16
+            color: "#0f172a"
+            clip: true
+            visible: carouselModel.count > 0 && !carousel.hasFailed && !appInfo.isTechnicalPackage
+
+            Discover.ScreenshotsModel {
+                id: carouselModel
+                application: appInfo.application
+            }
+
+            CarouselInlineView {
+                id: carousel
+                anchors.fill: parent
+                carouselModel: carouselModel
+            }
+        }
+
         Kirigami.PlaceholderMessage {
             Layout.fillWidth: true
-
             visible: carousel.hasFailed
             icon.name: "image-missing"
             text: i18nc("@info placeholder message", "Screenshots not available for %1", appInfo.application.name)
-        }
-
-        CarouselInlineView {
-            id: carousel
-
-            Layout.fillWidth: true
-            // Undo page paddings so that the header touches the edges. We don't
-            // want it to actually be in the header: area since then it wouldn't
-            // scroll away, which we do want.
-            Layout.leftMargin: -appInfo.leftPadding
-            Layout.rightMargin: -appInfo.rightPadding
-            // This roughly replicates scaling formula for the screenshots
-            // gallery on FlatHub website, adjusted to scale with gridUnit
-            Layout.minimumHeight: Math.round((16 + 1/9) * Kirigami.Units.gridUnit)
-            Layout.maximumHeight: 30 * Kirigami.Units.gridUnit
-            Layout.preferredHeight: Math.round(width / 2) + Math.round((2 + 7/9) * Kirigami.Units.gridUnit)
-
-            edgeMargin: appInfo.padding
-            visible: carouselModel.count > 0 && !hasFailed && !appInfo.isTechnicalPackage
-
-            carouselModel: Discover.ScreenshotsModel {
-                application: appInfo.application
-            }
         }
 
         ColumnLayout {
@@ -390,303 +376,333 @@ DiscoverPage {
             }
         }
 
-        // App description section
+        // App Short & Long Description
         ColumnLayout {
-            spacing: Kirigami.Units.smallSpacing
-
-            // Short description
-            // Not using Kirigami.Heading here because that component doesn't
-            // support selectable text, and we want this to be selectable because
-            // it's also used to show the path for local packages, and that makes
-            // sense to be selectable
-            Kirigami.SelectableLabel {
-                Layout.fillWidth: true
-                Layout.preferredWidth: contentWidth
-                // Not relevant to the offline upgrade use case because we
-                // display the info in the header instead
-                visible: !appInfo.isOfflineUpgrade
-                text: appInfo.application.comment
-                wrapMode: Text.Wrap
-
-                // Match `level: 1` in Kirigami.Heading
-                font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.35
-                font.weight: Font.DemiBold
-
-                Accessible.role: Accessible.Heading
-            }
-
-            // Long app description
-            Kirigami.SelectableLabel {
-                objectName: "applicationDescription" // for appium tests
-                Layout.fillWidth: true
-                Layout.preferredWidth: contentWidth
-                wrapMode: Text.WordWrap
-                text: appInfo.application.longDescription
-                textFormat: TextEdit.RichText
-                onLinkActivated: link => Qt.openUrlExternally(link);
-            }
-        }
-
-        // Changelog section
-        ColumnLayout {
-            spacing: Kirigami.Units.smallSpacing
-            visible: changelogLabel.visible
-
-            Kirigami.Heading {
-                text: i18n("What’s New")
-                level: 2
-                type: Kirigami.Heading.Type.Primary
-                wrapMode: Text.Wrap
-            }
-
-            // Changelog text
-            QQC2.Label {
-                id: changelogLabel
-
-                Layout.fillWidth: true
-
-                // Some backends are known to produce empty line break as a text
-                visible: text !== "" && text !== "<br />"
-                wrapMode: Text.WordWrap
-
-                Component.onCompleted: appInfo.application.fetchChangelog()
-                Connections {
-                    target: appInfo.application
-                    function onChangelogFetched(changelog) {
-                        changelogLabel.text = changelog
-                    }
-                }
-            }
-        }
-
-        // Reviews section
-        ColumnLayout {
-            spacing: Kirigami.Units.smallSpacing
-            visible: !appInfo.isTechnicalPackage
-
-            Kirigami.Heading {
-                Layout.fillWidth: true
-                text: i18n("Reviews")
-                level: 2
-                type: Kirigami.Heading.Type.Primary
-                wrapMode: Text.Wrap
-            }
-
-            Kirigami.LoadingPlaceholder {
-                id: reviewsLoadingPlaceholder
-                Layout.alignment: Qt.AlignHCenter
-                Layout.maximumWidth: Kirigami.Units.gridUnit * 15
-                visible: reviewsModel.fetching
-                text: i18n("Loading reviews for %1", appInfo.application.name)
-            }
-
-            Kirigami.PlaceholderMessage {
-                id: reviewsError
-                Layout.fillWidth: true
-                readonly property bool hasError: reviewsModel.backend && reviewsModel.backend.errorMessage.length > 0 && text.length > 0 && reviewsModel.count === 0 && !reviewsLoadingPlaceholder.visible
-                visible: hasError
-                icon.name: "text-unflow"
-                text: i18nc("@info placeholder message", "Reviews for %1 are temporarily unavailable", appInfo.application.name)
-                explanation: reviewsModel.backend ? reviewsModel.backend.errorMessage : ""
-            }
-
-            Kirigami.PlaceholderMessage {
-                Layout.fillWidth: true
-                visible: !reviewsStats.visible && !reviewsLoadingPlaceholder.visible
-                text: i18nc("@Info placeholder message", "No reviews posted yet")
-                explanation: appInfo.application.isInstalled ? "" : i18nc("@info placeholder explanation", "Install to write a review")
-                helpfulAction: Kirigami.Action {
-                    enabled: appInfo.application.isInstalled
-
-                    text: appInfo.application.isInstalled ? i18n("Write a Review") : i18n("Install to Write a Review")
-                    icon.name: "document-edit"
-
-                    onTriggered: {
-                        reviewsSheet.openReviewDialog()
-                    }
-                }
-            }
-
-            ReviewsStats {
-                id: reviewsStats
-                visible: reviewsModel.count > 0
-                Layout.fillWidth: true
-                application: appInfo.application
-                reviewsModel: reviewsModel
-                model: reviewsSheet.model
-                visibleReviews: Math.min(reviewsModel.count, appInfo.visibleReviews)
-                compact: appInfo.compact
-            }
-
-            // Review-related buttons
-            Flow {
-                Layout.fillWidth: true
-                spacing: Kirigami.Units.smallSpacing
-
-                QQC2.Button {
-                    visible: reviewsModel.count > visibleReviews
-
-                    text: i18nc("@action:button", "Show All Reviews")
-                    icon.name: "view-visible"
-
-                    onClicked: {
-                        reviewsSheet.open()
-                    }
-                }
-
-                QQC2.Button {
-                    visible: transactionListener.resource.state !== Discover.AbstractResource.Broken
-                          && reviewsModel.backend
-                          && !reviewsError.visible
-                          && reviewsStats.visible
-                          && reviewsModel.backend.isResourceSupported(appInfo.application)
-                    enabled: appInfo.application.isInstalled
-
-                    text: appInfo.application.isInstalled ? i18n("Write a Review") : i18n("Install to Write a Review")
-                    icon.name: "document-edit"
-
-                    onClicked: {
-                        reviewsSheet.openReviewDialog()
-                    }
-                }
-            }
-        }
-
-        // "External Links" section
-        ColumnLayout {
-            readonly property int visibleButtons: (helpButton.visible ? 1 : 0)
-                                                + (homepageButton.visible ? 1: 0)
-                                                + (donateButton.visible ? 1 : 0)
-                                                + (bugButton.visible ? 1 : 0)
-                                                + (contributeButton.visible ? 1 : 0)
-                                                + (faqButton.visible ? 1 : 0)
-                                                + (translateButton.visible ? 1 : 0)
-                                                + (contactButton.visible ? 1 : 0)
-                                                + (vcsBrowserButton.visible ? 1 : 0)
-            visible: visibleButtons > 0 && !appInfo.isTechnicalPackage
-
+            Layout.fillWidth: true
             spacing: Kirigami.Units.smallSpacing
 
             Kirigami.Heading {
-                text: i18nc("@title", "External Links")
-                level: 2
-                type: Kirigami.Heading.Type.Primary
-                wrapMode: Text.Wrap
-            }
-
-            ColumnLayout {
                 Layout.fillWidth: true
+                        visible: !appInfo.isOfflineUpgrade && appInfo.application.comment.length > 0
+                        text: appInfo.application.comment
+                        level: 2
+                        font.weight: Font.Bold
+                        wrapMode: Text.Wrap
+                        color: Kirigami.Theme.textColor
+                    }
 
-                spacing: Kirigami.Units.largeSpacing
-
-                ApplicationResourceButton {
-                    id: faqButton
-
-                    visible: website.length > 0
-
-                    icon: "question-symbolic"
-                    website: application.faqURL.toString()
-                    linkText: i18nc("@info text of a web URL", "Read the FAQ")
+                    Kirigami.SelectableLabel {
+                        objectName: "applicationDescription"
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        text: appInfo.application.longDescription
+                        textFormat: TextEdit.RichText
+                        font.pointSize: Kirigami.Theme.defaultFont.pointSize
+                        color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.textColor, Kirigami.Theme.backgroundColor, 0.15)
+                        onLinkActivated: link => Qt.openUrlExternally(link)
+                    }
                 }
 
-                ApplicationResourceButton {
-                    id: helpButton
+                // Changelog section
+                ColumnLayout {
+                    spacing: Kirigami.Units.smallSpacing
+                    visible: changelogLabel.visible
 
-                    visible: website.length > 0
+                    Kirigami.Heading {
+                        text: i18n("What’s New")
+                        level: 2
+                        type: Kirigami.Heading.Type.Primary
+                        wrapMode: Text.Wrap
+                    }
 
-                    icon: "documentation-symbolic"
-                    website: application.helpURL.toString()
-                    linkText: i18nc("@info text of a web URL", faqButton.visible
-                        ? "Read the full documentation"
-                        : "Read the documentation")
+                    QQC2.Label {
+                        id: changelogLabel
+                        Layout.fillWidth: true
+                        visible: text !== "" && text !== "<br />"
+                        wrapMode: Text.WordWrap
+                        Component.onCompleted: appInfo.application.fetchChangelog()
+                        Connections {
+                            target: appInfo.application
+                            function onChangelogFetched(changelog) {
+                                changelogLabel.text = changelog
+                            }
+                        }
+                    }
                 }
 
-                ApplicationResourceButton {
-                    id: homepageButton
+                // Reviews Section
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: Kirigami.Units.smallSpacing
+                    visible: !appInfo.isTechnicalPackage
 
-                    visible: website.length > 0
+                    Kirigami.Heading {
+                        Layout.fillWidth: true
+                        text: i18n("Reviews")
+                        level: 2
+                        type: Kirigami.Heading.Type.Primary
+                        wrapMode: Text.Wrap
+                        visible: !reviewsStats.visible && (reviewsLoadingPlaceholder.visible || reviewsError.visible)
+                    }
 
-                    icon: "internet-services-symbolic"
-                    website: application.homepage.toString()
-                    linkText: i18nc("@info text of a web URL", "Visit the project’s website")
+                    Kirigami.LoadingPlaceholder {
+                        id: reviewsLoadingPlaceholder
+                        Layout.alignment: Qt.AlignHCenter
+                        Layout.maximumWidth: Kirigami.Units.gridUnit * 15
+                        visible: reviewsModel.fetching
+                        text: i18n("Loading reviews for %1", appInfo.application.name)
+                    }
+
+                    Kirigami.PlaceholderMessage {
+                        id: reviewsError
+                        Layout.fillWidth: true
+                        readonly property bool hasError: reviewsModel.backend && reviewsModel.backend.errorMessage.length > 0 && text.length > 0 && reviewsModel.count === 0 && !reviewsLoadingPlaceholder.visible
+                        visible: hasError
+                        icon.name: "text-unflow"
+                        text: i18nc("@info placeholder message", "Reviews for %1 are temporarily unavailable", appInfo.application.name)
+                        explanation: reviewsModel.backend ? reviewsModel.backend.errorMessage : ""
+                    }
+
+                    Kirigami.PlaceholderMessage {
+                        Layout.fillWidth: true
+                        visible: !reviewsStats.visible && !reviewsLoadingPlaceholder.visible
+                        text: i18nc("@Info placeholder message", "No reviews posted yet")
+                        explanation: appInfo.application.isInstalled ? "" : i18nc("@info placeholder explanation", "Install to write a review")
+                        helpfulAction: Kirigami.Action {
+                            enabled: appInfo.application.isInstalled
+                            text: appInfo.application.isInstalled ? i18n("Write a Review") : i18n("Install to Write a Review")
+                            icon.name: "document-edit"
+                            onTriggered: {
+                                reviewsSheet.openReviewDialog()
+                            }
+                        }
+                    }
+
+                    ReviewsStats {
+                        id: reviewsStats
+                        visible: reviewsModel.count > 0
+                        Layout.fillWidth: true
+                        application: appInfo.application
+                        reviewsModel: reviewsModel
+                        model: reviewsSheet.model
+                        visibleReviews: Math.min(reviewsModel.count, appInfo.visibleReviews)
+                        compact: appInfo.compact
+                        canShowAllReviews: reviewsModel.count > visibleReviews
+                        canWriteReview: transactionListener.resource.state !== Discover.AbstractResource.Broken
+                            && reviewsModel.backend
+                            && !reviewsError.visible
+                            && reviewsModel.backend.isResourceSupported(appInfo.application)
+                        isInstalled: appInfo.application.isInstalled
+                        onShowAllReviewsRequested: {
+                            reviewsSheet.open()
+                        }
+                        onWriteReviewRequested: {
+                            reviewsSheet.openReviewDialog()
+                        }
+                    }
                 }
 
-                ApplicationResourceButton {
-                    id: donateButton
+        // Links externos Card
+        Rectangle {
+                    id: externalLinksCard
+                    readonly property int visibleButtons: (helpButton.visible ? 1 : 0)
+                                                        + (homepageButton.visible ? 1: 0)
+                                                        + (donateButton.visible ? 1 : 0)
+                                                        + (bugButton.visible ? 1 : 0)
+                                                        + (contributeButton.visible ? 1 : 0)
+                                                        + (faqButton.visible ? 1 : 0)
+                                                        + (translateButton.visible ? 1 : 0)
+                                                        + (contactButton.visible ? 1 : 0)
+                                                        + (vcsBrowserButton.visible ? 1 : 0)
+                    visible: visibleButtons > 0 && !appInfo.isTechnicalPackage
 
-                    visible: website.length > 0
+                    Layout.fillWidth: true
+                    radius: 16
+                    color: Kirigami.Theme.backgroundColor
+                    border.color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.12)
+                    border.width: 1
 
-                    icon: "help-donate-symbolic"
-                    website: application.donationURL.toString()
-                    linkText: i18nc("@info text of a web URL", "Donate to the project")
+                    implicitHeight: linksCol.implicitHeight + Kirigami.Units.largeSpacing * 3
+
+                    ColumnLayout {
+                        id: linksCol
+                        anchors.fill: parent
+                        anchors.margins: Kirigami.Units.largeSpacing * 1.5
+                        spacing: Kirigami.Units.largeSpacing
+
+                        Kirigami.Heading {
+                            text: i18nc("@title", "External Links")
+                            level: 3
+                            font.weight: Font.Bold
+                            color: Kirigami.Theme.textColor
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: Kirigami.Units.smallSpacing
+
+                            ApplicationResourceButton {
+                                id: faqButton
+                                visible: website.length > 0
+                                icon: "question-symbolic"
+                                website: appInfo.application.faqURL.toString()
+                                linkText: i18nc("@info text of a web URL", "Read the FAQ")
+                            }
+
+                            ApplicationResourceButton {
+                                id: helpButton
+                                visible: website.length > 0
+                                icon: "documentation-symbolic"
+                                website: appInfo.application.helpURL.toString()
+                                linkText: i18nc("@info text of a web URL", faqButton.visible
+                                    ? "Read the full documentation"
+                                    : "Read the documentation")
+                            }
+
+                            ApplicationResourceButton {
+                                id: homepageButton
+                                visible: website.length > 0
+                                icon: "internet-services-symbolic"
+                                website: appInfo.application.homepage.toString()
+                                linkText: i18nc("@info text of a web URL", "Visit the project’s website")
+                            }
+
+                            ApplicationResourceButton {
+                                id: donateButton
+                                visible: website.length > 0
+                                icon: "help-donate-symbolic"
+                                website: appInfo.application.donationURL.toString()
+                                linkText: i18nc("@info text of a web URL", "Donate to the project")
+                            }
+
+                            ApplicationResourceButton {
+                                id: bugButton
+                                visible: website.length > 0
+                                icon: "tools-report-bug-symbolic"
+                                website: appInfo.application.bugURL.toString()
+                                linkText: i18nc("@info text of a web URL", "Report a bug")
+                            }
+
+                            ApplicationResourceButton {
+                                id: contributeButton
+                                visible: website.length > 0
+                                icon: "applications-development-symbolic"
+                                website: appInfo.application.contributeURL.toString()
+                                linkText: i18nc("@info text of a web URL", "Start contributing")
+                            }
+
+                            ApplicationResourceButton {
+                                id: translateButton
+                                visible: website.length > 0
+                                icon: "translate-symbolic"
+                                website: appInfo.application.translateURL.toString()
+                                linkText: i18nc("@info text of a web URL", "Help with translations")
+                            }
+
+                            ApplicationResourceButton {
+                                id: contactButton
+                                visible: website.length > 0
+                                icon: "mail-message-new-symbolic"
+                                website: appInfo.application.contactURL.toString()
+                                linkText: i18nc("@info text of a web URL", "Contact the developers")
+                            }
+
+                            ApplicationResourceButton {
+                                id: vcsBrowserButton
+                                visible: website.length > 0
+                                icon: "folder-git-symbolic"
+                                website: appInfo.application.vcsBrowserURL.toString()
+                                linkText: i18nc("@info text of a web URL", "Browse the source code")
+                            }
+                        }
+                    }
                 }
 
-                ApplicationResourceButton {
-                    id: bugButton
+                // Permissões Card
+                Rectangle {
+                    id: permissionsCard
+                    Layout.fillWidth: true
+                    radius: 16
+                    color: Kirigami.Theme.backgroundColor
+                    border.color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.12)
+                    border.width: 1
 
-                    visible: website.length > 0
+                    implicitHeight: permCol.implicitHeight + Kirigami.Units.largeSpacing * 3
 
-                    icon: "tools-report-bug-symbolic"
-                    website: application.bugURL.toString()
-                    linkText: i18nc("@info text of a web URL", "Report a bug")
+                    ColumnLayout {
+                        id: permCol
+                        anchors.fill: parent
+                        anchors.margins: Kirigami.Units.largeSpacing * 1.5
+                        spacing: Kirigami.Units.largeSpacing
+
+                        Kirigami.Heading {
+                            text: i18nc("@title", "Permissions")
+                            level: 3
+                            font.weight: Font.Bold
+                            color: Kirigami.Theme.textColor
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: Kirigami.Units.smallSpacing
+
+                            Repeater {
+                                model: appInfo.application.bottomObjects
+
+                                delegate: Loader {
+                                    required property string modelData
+                                    Layout.fillWidth: true
+                                    onModelDataChanged: {
+                                        setSource(modelData, { resource: Qt.binding(() => appInfo.application) });
+                                    }
+                                }
+                            }
+
+                            RowLayout {
+                                visible: appInfo.application.bottomObjects.length === 0
+                                spacing: Kirigami.Units.largeSpacing
+
+                                Rectangle {
+                                    width: 36
+                                    height: 36
+                                    radius: 8
+                                    color: "#fef3c7"
+                                    border.color: "#fde68a"
+                                    border.width: 1
+
+                                    Kirigami.Icon {
+                                        anchors.centerIn: parent
+                                        width: 20
+                                        height: 20
+                                        source: "security-medium"
+                                        color: "#d97706"
+                                    }
+                                }
+
+                                ColumnLayout {
+                                    spacing: 2
+                                    Layout.fillWidth: true
+
+                                    QQC2.Label {
+                                        text: i18nd("libdiscover", "Full Access")
+                                        font.weight: Font.DemiBold
+                                        font.pointSize: Kirigami.Theme.defaultFont.pointSize
+                                        color: Kirigami.Theme.textColor
+                                    }
+
+                                    QQC2.Label {
+                                        text: i18nd("libdiscover", "Can access everything on the system")
+                                        font.pointSize: Kirigami.Theme.smallFont.pointSize
+                                        color: Kirigami.Theme.disabledTextColor
+                                        wrapMode: Text.WordWrap
+                                        Layout.fillWidth: true
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-
-                ApplicationResourceButton {
-                    id: contributeButton
-
-                    visible: website.length > 0
-
-                    icon: "applications-development-symbolic"
-                    website: application.contributeURL.toString()
-                    linkText: i18nc("@info text of a web URL", "Start contributing")
-                }
-
-                ApplicationResourceButton {
-                    id: translateButton
-
-                    visible: website.length > 0
-
-                    icon: "translate-symbolic"
-                    website: application.translateURL.toString()
-                    linkText: i18nc("@info text of a web URL", "Help with translations")
-                }
-
-                ApplicationResourceButton {
-                    id: contactButton
-
-                    visible: website.length > 0
-
-                    icon: "mail-message-new-symbolic"
-                    website: application.contactURL.toString()
-                    linkText: i18nc("@info text of a web URL", "Contact the developers")
-                }
-
-                ApplicationResourceButton {
-                    id: vcsBrowserButton
-
-                    visible: website.length > 0
-
-                    icon: "folder-git-symbolic"
-                    website: application.vcsBrowserURL.toString()
-                    linkText: i18nc("@info text of a web URL", "Browse the source code")
-                }
-            }
         }
-
-        Repeater {
-            model: appInfo.application.bottomObjects
-
-            delegate: Loader {
-                required property string modelData
-
-                Layout.fillWidth: true
-
-                onModelDataChanged: {
-                    setSource(modelData, { resource: Qt.binding(() => appInfo.application) });
-                }
-            }
-        }
-    }
 
     AddonsView {
         id: addonsView

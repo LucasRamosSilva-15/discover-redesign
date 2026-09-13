@@ -92,8 +92,8 @@ Item {
         readonly property Image largeImageView: largeImageLoader.item
         readonly property Image smallImageView: smallImageLoader.item
 
+        height: Math.min(parent.height - backgroundShadow.shadow.size, Math.round((parent.width - Kirigami.Units.gridUnit * 6) / ratio))
         width: Math.round(height * ratio)
-        height: parent.height - backgroundShadow.shadow.size
 
         anchors.centerIn: parent
         anchors.verticalCenterOffset: -backgroundShadow.shadow.yOffset
