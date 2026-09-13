@@ -91,6 +91,24 @@ Kirigami.ApplicationWindow {
             
             Item { Layout.fillWidth: true }
             
+            Loader {
+                Layout.alignment: Qt.AlignVCenter
+                active: window.pageStack.currentItem != null
+                sourceComponent: Kirigami.ActionToolBar {
+                    actions: window.pageStack.currentItem.actions
+                }
+            }
+            
+            Loader {
+                Layout.alignment: Qt.AlignVCenter
+                active: window.pageStack.currentItem != null
+                sourceComponent: Kirigami.ActionToolBar {
+                    actions: window.pageStack.currentItem.contextualActions
+                }
+            }
+            
+            Item { Layout.preferredWidth: Kirigami.Units.smallSpacing }
+            
             SearchField {
                 id: searchField
                 Layout.preferredWidth: Math.min(400, parent.width / 2)

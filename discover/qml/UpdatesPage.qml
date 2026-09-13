@@ -375,6 +375,82 @@ DiscoverPage {
         currentIndex: -1
         reuseItems: true
         clip: true
+        
+        header: Item {
+            width: updatesView.width
+            height: heroBanner.height + Kirigami.Units.largeSpacing * 3
+            
+            Rectangle {
+                id: heroBanner
+                width: Math.min(parent.width - Kirigami.Units.largeSpacing * 4, 1024)
+                x: Math.max(Kirigami.Units.largeSpacing * 2, (parent.width - width) / 2)
+                y: Kirigami.Units.largeSpacing
+                height: Math.max(Kirigami.Units.gridUnit * 6, heroLayout.implicitHeight + Kirigami.Units.largeSpacing * 2)
+                radius: Kirigami.Units.largeSpacing
+                
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0.0; color: "#f59e0b" } // amber-500
+                    GradientStop { position: 1.0; color: "#ea580c" } // orange-600
+                }
+                
+                // Faded background icon
+                Kirigami.Icon {
+                    source: "view-refresh"
+                    width: Kirigami.Units.iconSizes.huge * 4
+                    height: width
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    anchors.rightMargin: -Kirigami.Units.iconSizes.huge
+                    anchors.bottomMargin: -Kirigami.Units.iconSizes.huge
+                    color: "white"
+                    isMask: true
+                    opacity: 0.1
+                }
+                
+                RowLayout {
+                    id: heroLayout
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.margins: Kirigami.Units.largeSpacing * 1.5
+                    spacing: Kirigami.Units.largeSpacing * 1.5
+                    
+                    Rectangle {
+                        Layout.preferredWidth: Kirigami.Units.iconSizes.huge * 1.2
+                        Layout.preferredHeight: Kirigami.Units.iconSizes.huge * 1.2
+                        radius: Kirigami.Units.largeSpacing
+                        color: Qt.rgba(1, 1, 1, 0.15)
+                        border.color: Qt.rgba(1, 1, 1, 0.2)
+                        
+                        Kirigami.Icon {
+                            anchors.centerIn: parent
+                            width: Kirigami.Units.iconSizes.huge * 0.7
+                            height: width
+                            source: "view-refresh"
+                            isMask: true
+                            color: "white"
+                        }
+                    }
+                    
+                    ColumnLayout {
+                        spacing: Kirigami.Units.smallSpacing
+                        Kirigami.Heading {
+                            text: i18n("Atualizações Disponíveis")
+                            color: "white"
+                            level: 2
+                            font.bold: true
+                        }
+                        QQC2.Label {
+                            text: i18n("Mantenha seu sistema seguro e com os recursos mais recentes.")
+                            color: Qt.rgba(1, 1, 1, 0.85)
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                        }
+                    }
+                }
+            }
+        }
 
         activeFocusOnTab: true
         onActiveFocusChanged: {
@@ -394,23 +470,55 @@ DiscoverPage {
 
         section {
             property: "section"
-            delegate: Kirigami.ListSectionHeader {
+            delegate: Item {
                 required property string section
-
+                
                 width: updatesView.width
-                label: section
+                height: sectionLabel.implicitHeight + Kirigami.Units.largeSpacing * 2
+                
+                QQC2.Label {
+                    id: sectionLabel
+                    text: section
+                    font.bold: true
+                    font.capitalization: Font.AllUppercase
+                    font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+                    color: Kirigami.Theme.disabledTextColor
+                    width: Math.min(updatesView.width - Kirigami.Units.largeSpacing * 4, 1024)
+                    x: Math.max(Kirigami.Units.largeSpacing * 2, (updatesView.width - width) / 2)
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: Kirigami.Units.smallSpacing
+                }
             }
         }
 
-        delegate: QQC2.ItemDelegate {
-            id: listItem
+        delegate: Item {
+            id: delegateRoot
+            width: updatesView.width
+            height: listItem.implicitHeight + Kirigami.Units.smallSpacing
 
             // type: roles of Discover.UpdateModel
             required property var model
             required property int index
             required property bool extended
 
-            width: updatesView.width
+            QQC2.ItemDelegate {
+                id: listItem
+
+                width: Math.min(delegateRoot.width - Kirigami.Units.largeSpacing * 4, 1024)
+                x: Math.max(Kirigami.Units.largeSpacing * 2, (delegateRoot.width - width) / 2)
+                y: Kirigami.Units.smallSpacing / 2
+                
+                property var model: delegateRoot.model
+                property int index: delegateRoot.index
+                property bool extended: delegateRoot.extended
+                
+                // Normal background, each item is a separate card
+                background: Rectangle {
+                    id: cardBg
+                    color: Kirigami.Theme.viewBackgroundColor
+                    border.color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.15)
+                    radius: Kirigami.Units.largeSpacing
+                }
 
             highlighted: false
             focus: ListView.isCurrentItem
@@ -469,7 +577,7 @@ DiscoverPage {
 
                 RowLayout {
                     id: mainRow
-                    spacing: Kirigami.Units.smallSpacing
+                    spacing: Kirigami.Units.largeSpacing
                     Layout.fillWidth: true
                     Layout.fillHeight: true
 
@@ -482,13 +590,22 @@ DiscoverPage {
                         enabled: !resourcesUpdatesModel.isProgressing
                     }
 
-                    Kirigami.Icon {
-                        id: itemIcon
-                        Layout.preferredWidth: Kirigami.Units.iconSizes.medium
-                        Layout.preferredHeight: Kirigami.Units.iconSizes.medium
-                        source: listItem.model.decoration
-                        selected: listItem.down
-                        smooth: true
+                    Rectangle {
+                        Layout.preferredWidth: Kirigami.Units.iconSizes.huge
+                        Layout.preferredHeight: Kirigami.Units.iconSizes.huge
+                        radius: Kirigami.Units.largeSpacing
+                        color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.05)
+                        border.color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.1)
+
+                        Kirigami.Icon {
+                            id: itemIcon
+                            anchors.centerIn: parent
+                            width: Kirigami.Units.iconSizes.large
+                            height: Kirigami.Units.iconSizes.large
+                            source: listItem.model.decoration
+                            selected: listItem.down
+                            smooth: true
+                        }
                     }
 
                     ColumnLayout {
@@ -503,7 +620,8 @@ DiscoverPage {
                         Kirigami.Heading {
                             Layout.fillWidth: true
                             text: listItem.model.display
-                            level: 3
+                            level: 4
+                            font.bold: true
                             elide: Text.ElideRight
                             color: listItem.down ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
                         }
@@ -518,16 +636,20 @@ DiscoverPage {
                         }
                     }
 
-                    TransactionProgressIndicator {
-                        Layout.minimumWidth: Kirigami.Units.gridUnit * 6
-
-                        Kirigami.Theme.colorSet: Kirigami.Theme.View
-                        Kirigami.Theme.inherit: false
-
-                        text: listItem.model.resourceState === 2 ? i18n("Installing") : listItem.model.size
-
-                        progress: listItem.model.resourceProgress / 100
-                        selected: listItem.down
+                    Rectangle {
+                        Layout.minimumWidth: Kirigami.Units.gridUnit * 5
+                        Layout.preferredHeight: sizeLabel.implicitHeight + Kirigami.Units.smallSpacing * 2
+                        radius: Kirigami.Units.smallSpacing
+                        color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.05)
+                        
+                        QQC2.Label {
+                            id: sizeLabel
+                            anchors.centerIn: parent
+                            text: listItem.model.resourceState === 2 ? i18n("Installing") : listItem.model.size
+                            font.bold: true
+                            font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+                            color: Kirigami.Theme.disabledTextColor
+                        }
                     }
                 }
 
@@ -598,7 +720,8 @@ DiscoverPage {
             onClicked: {
                 model.extended = !model.extended
             }
-        }
+        } // QQC2.ItemDelegate
+        } // Item (delegateRoot)
     }
 
     readonly property alias secSinceUpdate: resourcesUpdatesModel.secsToLastUpdate
