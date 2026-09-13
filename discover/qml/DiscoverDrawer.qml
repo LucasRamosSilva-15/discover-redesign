@@ -71,56 +71,12 @@ Kirigami.GlobalDrawer {
         }
     }
 
-    header: Kirigami.AbstractApplicationHeader {
-        visible: drawer.wideScreen
-
-        contentItem: SearchField {
-            id: searchField
-
-            anchors {
-                left: parent.left
-                right: parent.right
-            }
-
-            // Give the search field keyboard focus by default, unless it would
-            // make the virtual keyboard appear, because we don't want that
-            focus: !Kirigami.InputMethod.willShowOnActive
-
-            visible: window.leftPage && (window.leftPage.searchFor !== null || window.leftPage.hasOwnProperty("search"))
-
-            page: window.leftPage
-
-            onCurrentSearchTextChanged: {
-                var curr = window.leftPage;
-
-                if (pageStack.depth > 1) {
-                    pageStack.pop()
-                }
-
-                if (currentSearchText === "" && window.currentTopLevel === "" && !window.leftPage.category) {
-                    Navigation.openHome()
-                } else if (!curr.hasOwnProperty("search")) {
-                    if (currentSearchText) {
-                        Navigation.clearStack()
-                        Navigation.openApplicationList({ search: currentSearchText })
-                    }
-                } else {
-                    curr.search = currentSearchText;
-                    curr.forceActiveFocus()
-                }
-                drawer.currentSearchText = currentSearchText
-            }
-
-            Keys.onDownPressed: featuredActionListItem.forceActiveFocus(Qt.TabFocusReason)
-        }
-    }
 
     topContent: [
         ActionListItem {
             id: featuredActionListItem
             action: featuredAction
             visible: enabled && drawer.wideScreen
-            Keys.onUpPressed: searchField.forceActiveFocus(Qt.TabFocusReason)
         },
         ActionListItem {
             action: installedAction
