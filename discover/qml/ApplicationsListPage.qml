@@ -49,6 +49,7 @@ DiscoverPage {
     }
 
     property string name: categoryObject?.name ?? ""
+    property string iconName: categoryObject ? categoryObject.icon : (search.length > 0 ? "search" : "applications-all")
 
     title: {
         const count = appsModel.count;

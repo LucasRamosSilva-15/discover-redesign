@@ -33,10 +33,103 @@ Kirigami.ApplicationWindow {
     minimumWidth: Kirigami.Units.gridUnit * 17
     minimumHeight: Kirigami.Units.gridUnit * 17
 
-    pageStack.globalToolBar.style: Kirigami.ApplicationHeaderStyle.ToolBar
-    pageStack.globalToolBar.showNavigationButtons: pageStack.currentIndex === 0 ? Kirigami.ApplicationHeaderStyle.None : Kirigami.ApplicationHeaderStyle.ShowBackButton
+    pageStack.globalToolBar.style: Kirigami.ApplicationHeaderStyle.None
     pageStack.columnView.columnResizeMode: Kirigami.ColumnView.SingleColumn
+    pageStack.anchors.topMargin: customGlobalHeader.height
     
+    menuBar: QQC2.ToolBar {
+        id: customGlobalHeader
+        
+        // Add a bottom border to separate it from the content
+        background: Rectangle {
+            color: Kirigami.Theme.backgroundColor
+            Kirigami.Separator {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+            }
+        }
+
+        contentItem: RowLayout {
+            spacing: Kirigami.Units.smallSpacing
+            Layout.margins: Kirigami.Units.smallSpacing
+
+            QQC2.ToolButton {
+                icon.name: Qt.application.layoutDirection === Qt.LeftToRight ? "go-previous" : "go-next"
+                icon.color: "transparent"
+                enabled: window.pageStack.currentIndex > 0
+                onClicked: window.pageStack.pop()
+            }
+            
+            QQC2.ToolButton {
+                icon.name: Qt.application.layoutDirection === Qt.LeftToRight ? "go-next" : "go-previous"
+                icon.color: "transparent"
+                enabled: false // Kirigami doesn't support forward navigation natively
+            }
+
+            Item { Layout.preferredWidth: Kirigami.Units.largeSpacing } // Spacer
+
+            Kirigami.Icon {
+                source: window.pageStack.currentItem?.iconName ?? "go-home"
+                implicitWidth: Kirigami.Units.iconSizes.smallMedium
+                implicitHeight: implicitWidth
+                Layout.alignment: Qt.AlignVCenter
+            }
+            
+            Kirigami.Heading {
+                text: window.title
+                level: 3
+                font.weight: Font.Bold
+                Layout.alignment: Qt.AlignVCenter
+            }
+            
+            Item { Layout.fillWidth: true }
+            
+            SearchField {
+                id: searchField
+                Layout.preferredWidth: Math.min(400, parent.width / 2)
+                Layout.alignment: Qt.AlignVCenter
+                placeholderText: i18n("Pesquisar aplicativos, extensões e pacotes... CTRL + F")
+                
+                focus: !Kirigami.InputMethod.willShowOnActive
+                onAccepted: {
+                    if (text.length === 0) return;
+                    // Handle Navigation.openApplicationList globally
+                    // Navigation object is global in Discover
+                    Navigation.openApplicationList({ search: text });
+                }
+            }
+            
+            Rectangle {
+                Layout.alignment: Qt.AlignVCenter
+                Layout.leftMargin: Kirigami.Units.smallSpacing
+                implicitWidth: syncRow.implicitWidth + Kirigami.Units.largeSpacing * 2
+                implicitHeight: syncRow.implicitHeight + Kirigami.Units.smallSpacing * 2
+                radius: height / 2
+                color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.05)
+                border.width: 1
+                border.color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.1)
+                
+                RowLayout {
+                    id: syncRow
+                    anchors.centerIn: parent
+                    spacing: Kirigami.Units.smallSpacing
+                    Rectangle {
+                        implicitWidth: 8
+                        implicitHeight: 8
+                        radius: 4
+                        color: Kirigami.Theme.highlightColor
+                    }
+                    QQC2.Label {
+                        text: i18n("Sincronizado")
+                        font.weight: Font.Medium
+                        font.pixelSize: Math.round(Kirigami.Theme.smallFont.pixelSize)
+                        color: Kirigami.Theme.textColor
+                    }
+                }
+            }
+        }
+    }
     readonly property Item leftPage: window.pageStack.depth > 0 ? window.pageStack.get(0) : null
 
     Loader {

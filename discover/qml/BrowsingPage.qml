@@ -18,69 +18,10 @@ DiscoverPage {
     id: page
 
     title: i18nc("@title:window the name of a top-level 'home' page", "Home")
+    property string iconName: "go-home"
     objectName: "featured"
 
-    titleDelegate: RowLayout {
-        Layout.fillWidth: true
-        
-        Kirigami.Icon {
-            source: "go-home"
-            implicitWidth: Kirigami.Units.iconSizes.smallMedium
-            implicitHeight: implicitWidth
-            Layout.alignment: Qt.AlignVCenter
-        }
-        
-        Kirigami.Heading {
-            text: i18n("Início")
-            level: 2
-            font.weight: Font.Bold
-            Layout.alignment: Qt.AlignVCenter
-            Layout.rightMargin: Kirigami.Units.largeSpacing * 2
-        }
-        
-        Item { Layout.fillWidth: true }
-        
-        SearchField {
-            id: searchField
-            Layout.preferredWidth: Math.min(400, parent.width / 2)
-            Layout.alignment: Qt.AlignVCenter
-            placeholderText: i18n("Pesquisar aplicativos, extensões e pacotes... CTRL + F")
-            
-            focus: !Kirigami.InputMethod.willShowOnActive
-            onAccepted: {
-                if (text.length === 0) return;
-                Navigation.openApplicationList({ search: text });
-            }
-        }
-        
-        Rectangle {
-            Layout.alignment: Qt.AlignVCenter
-            Layout.leftMargin: Kirigami.Units.smallSpacing
-            implicitWidth: syncRow.implicitWidth + Kirigami.Units.largeSpacing * 2
-            implicitHeight: syncRow.implicitHeight + Kirigami.Units.smallSpacing * 2
-            radius: height / 2
-            color: Kirigami.Theme.backgroundColor
-            border.width: 1
-            border.color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.1)
-            
-            RowLayout {
-                id: syncRow
-                anchors.centerIn: parent
-                spacing: Kirigami.Units.smallSpacing
-                Rectangle {
-                    implicitWidth: 8
-                    implicitHeight: 8
-                    radius: 4
-                    color: Kirigami.Theme.highlightColor
-                }
-                QQC2.Label {
-                    text: i18n("Sincronizado")
-                    font.weight: Font.Medium
-                    color: Kirigami.Theme.textColor
-                }
-            }
-        }
-    }
+
 
     header: DiscoverInlineMessage {
         id: message

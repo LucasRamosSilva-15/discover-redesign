@@ -28,6 +28,7 @@ ApplicationsListPage {
 
     globalToolBarStyle: Kirigami.ApplicationHeaderStyle.ToolBar
 
+    property string iconName: "search"
     titleDelegate: SearchField {
         id: searchField
 
