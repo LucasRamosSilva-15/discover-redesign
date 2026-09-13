@@ -71,8 +71,11 @@ Kirigami.GlobalDrawer {
         }
     }
 
-
     topContent: [
+        Kirigami.ListSectionHeader {
+            text: i18nc("@title:group", "NAVEGAÇÃO")
+            Layout.fillWidth: true
+        },
         ActionListItem {
             id: featuredActionListItem
             action: featuredAction
@@ -128,33 +131,48 @@ Kirigami.GlobalDrawer {
         ActionListItem {
             action: aboutAction
         },
-        Kirigami.Separator {
+        Kirigami.ListSectionHeader {
+            text: i18nc("@title:group", "CATEGORIAS")
             Layout.fillWidth: true
-            Layout.topMargin: Kirigami.Units.smallSpacing
-            Layout.leftMargin: Kirigami.Units.largeSpacing
-            Layout.rightMargin: Kirigami.Units.largeSpacing
         }
     ]
 
     footer: QQC2.Control {
-        readonly property int transactions: Discover.TransactionModel.count
-        readonly property bool currentPageShowsTransactionProgressInline:
-               applicationWindow().pageStack.currentItem instanceof ApplicationPage
-            || applicationWindow().pageStack.currentItem instanceof ApplicationsListPage
-            || applicationWindow().pageStack.currentItem instanceof UpdatesPage
+        visible: true // Always visible to show the application version
 
-        visible: transactions > 1 || (transactions === 1 && !currentPageShowsTransactionProgressInline)
-        padding: Kirigami.Units.largeSpacing
-        Kirigami.Separator {
-            Layout.fillWidth: true
-        }
+        contentItem: ColumnLayout {
+            spacing: 0
 
-        contentItem: ProgressView {}
-        Kirigami.Separator {
-            anchors {
-                left:parent.left
-                top: parent.top
-                right:parent.right
+            Kirigami.Separator {
+                Layout.fillWidth: true
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.margins: Kirigami.Units.largeSpacing
+
+                QQC2.Label {
+                    Layout.fillWidth: true
+                    text: i18nc("@info", "KDE Plasma 6")
+                    font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+                    color: Kirigami.Theme.disabledTextColor
+                }
+
+                Rectangle {
+                    color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.1)
+                    radius: Kirigami.Units.smallSpacing
+                    implicitWidth: versionLabel.implicitWidth + Kirigami.Units.smallSpacing * 2
+                    implicitHeight: versionLabel.implicitHeight + Kirigami.Units.smallSpacing
+
+                    QQC2.Label {
+                        id: versionLabel
+                        anchors.centerIn: parent
+                        text: "v" + Qt.application.version
+                        font.pixelSize: Math.round(Kirigami.Theme.smallFont.pixelSize * 0.9)
+                        font.family: "monospace"
+                        color: Kirigami.Theme.disabledTextColor
+                    }
+                }
             }
         }
 
