@@ -119,26 +119,6 @@ BasicAbstractCard {
                     maximumLineCount: 1
                     text: root.application.name
                 }
-                
-                // Show size if requested
-                Loader {
-                    active: root.showSize
-                    visible: active
-                    sourceComponent: Rectangle {
-                        color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.05)
-                        radius: Kirigami.Units.smallSpacing
-                        implicitHeight: sizeLbl.implicitHeight + Kirigami.Units.smallSpacing
-                        implicitWidth: sizeLbl.implicitWidth + Kirigami.Units.largeSpacing
-                        QQC2.Label {
-                            id: sizeLbl
-                            anchors.centerIn: parent
-                            text: root.application.sizeDescription
-                            font: Kirigami.Theme.smallFont
-                            color: Kirigami.Theme.textColor
-                            opacity: 0.7
-                        }
-                    }
-                }
             }
             
             QQC2.Label {
@@ -201,14 +181,43 @@ BasicAbstractCard {
             }
         }
         
-        // 3. Install Button
-        Loader {
-            active: root.showInstallButton
-            visible: active
+        // 3. Actions & Meta (Size badge + Install/Remove button)
+        RowLayout {
             Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
-            sourceComponent: InstallApplicationButton {
-                application: root.application
-                installOrRemoveButtonDisplayStyle: QQC2.AbstractButton.TextBesideIcon
+            spacing: Kirigami.Units.largeSpacing
+
+            // Size badge (as seen in installed.html, perfectly centered beside button)
+            Loader {
+                active: root.showSize && (root.application.sizeDescription?.length ?? 0) > 0
+                visible: active
+                Layout.alignment: Qt.AlignVCenter
+                sourceComponent: Rectangle {
+                    color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.05)
+                    border.width: 1
+                    border.color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.1)
+                    radius: Kirigami.Units.smallSpacing
+                    implicitHeight: sizeLbl.implicitHeight + Kirigami.Units.smallSpacing * 1.5
+                    implicitWidth: sizeLbl.implicitWidth + Kirigami.Units.largeSpacing
+                    QQC2.Label {
+                        id: sizeLbl
+                        anchors.centerIn: parent
+                        text: root.application.sizeDescription
+                        font: Kirigami.Theme.smallFont
+                        color: Kirigami.Theme.textColor
+                        opacity: 0.7
+                    }
+                }
+            }
+
+            // Install/Remove Button
+            Loader {
+                active: root.showInstallButton
+                visible: active
+                Layout.alignment: Qt.AlignVCenter
+                sourceComponent: InstallApplicationButton {
+                    application: root.application
+                    installOrRemoveButtonDisplayStyle: QQC2.AbstractButton.TextBesideIcon
+                }
             }
         }
     }

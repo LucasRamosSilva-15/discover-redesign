@@ -30,7 +30,7 @@ DiscoverPage {
     property alias allBackends: appsModel.allBackends
     property alias count: appsView.count
     property alias listHeader: appsView.header
-    property alias listHeaderPositioning: appsView.headerPositioning
+    property int listHeaderPositioning: 0
     property string sortProperty: "appsListPageSorting"
     property bool showRating: true
     property bool showSize: false
@@ -184,19 +184,27 @@ DiscoverPage {
         }
     ]
 
-    Kirigami.CardsListView {
+    GridView {
         id: appsView
-        
-        headerPositioning: ListView.InlineHeader
-        footerPositioning: ListView.InlineFooter
         
         activeFocusOnTab: true
         currentIndex: -1
         focus: true
+        clip: true
+        
+        leftMargin: Kirigami.Units.largeSpacing * 2
+        rightMargin: Kirigami.Units.largeSpacing * 2
+        topMargin: Kirigami.Units.largeSpacing
+        bottomMargin: Kirigami.Units.largeSpacing * 2
+        
+        readonly property int availableWidth: Math.max(1, width - leftMargin - rightMargin)
+        readonly property int columnsCount: availableWidth > Kirigami.Units.gridUnit * 36 ? 2 : 1
+        cellWidth: Math.floor(availableWidth / columnsCount)
+        cellHeight: Math.round(Kirigami.Units.gridUnit * 5.8)
         
         header: Item {
             id: heroBannerWrapper
-            width: appsView.width - appsView.leftMargin - appsView.rightMargin
+            width: appsView.availableWidth
             height: visible ? heroBannerItem.height + Kirigami.Units.largeSpacing * 2 : 0
             visible: page.name !== "" && !page.searchPage && page.stateFilter !== Discover.AbstractResource.Installed // Only show for categories
             
@@ -284,7 +292,7 @@ DiscoverPage {
         footer: Item {
             id: appViewFooter
             height: appsModel.busy ? Kirigami.Units.gridUnit * 8 : Kirigami.Units.gridUnit
-            width: appsView.width
+            width: appsView.availableWidth
         }
         onActiveFocusChanged: if (activeFocus && currentIndex === -1) {
             currentIndex = 0;
@@ -304,22 +312,21 @@ DiscoverPage {
             }
         }
 
-        delegate: ApplicationDelegate {
-            showRating: page.showRating
-            showSize: page.showSize
-        }
-
-        section {
-            property: page.categorize ? "categoryName" : ""
-            criteria: ViewSection.FullString
-
-            delegate: Kirigami.ListSectionHeader {
-                required property string section
-
-                topPadding: 0
-                width: appsView.width - appsView.leftMargin - appsView.rightMargin
-
-                label: section
+        delegate: Item {
+            id: delegateItem
+            width: appsView.cellWidth
+            height: appsView.cellHeight
+            
+            required property int index
+            required property Discover.AbstractResource application
+            
+            ApplicationDelegate {
+                anchors.fill: parent
+                anchors.margins: Kirigami.Units.smallSpacing
+                index: delegateItem.index
+                application: delegateItem.application
+                showRating: page.showRating
+                showSize: page.showSize
             }
         }
 
