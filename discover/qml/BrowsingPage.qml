@@ -210,7 +210,7 @@ DiscoverPage {
             Layout.bottomMargin: Kirigami.Units.smallSpacing
             Layout.columnSpan: apps.columns
             Layout.fillWidth: true
-            text: i18nc("@title:group", "Most Popular")
+            text: i18nc("@title:group", "Mais popular")
             wrapMode: Text.Wrap
             level: 2
             font.weight: Font.Bold
@@ -262,7 +262,7 @@ DiscoverPage {
             Layout.bottomMargin: Kirigami.Units.smallSpacing
             Layout.columnSpan: apps.columns
             Layout.fillWidth: true
-            text: i18nc("@title:group", "Editor’s Choice")
+            text: i18nc("@title:group", "Escolha do editor")
             wrapMode: Text.Wrap
             level: 2
             font.weight: Font.Bold
