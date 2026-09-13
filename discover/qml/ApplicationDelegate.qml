@@ -32,6 +32,8 @@ BasicAbstractCard {
         shadow.size: 8
         shadow.color: Qt.rgba(0, 0, 0, 0.05)
         shadow.yOffset: 2
+        border.width: 1
+        border.color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.1)
     }
 
     readonly property bool compact: !applicationWindow().wideScreen

@@ -151,8 +151,9 @@ DiscoverPage {
             
             gradient: Gradient {
                 orientation: Gradient.Horizontal
-                GradientStop { position: 0.0; color: Kirigami.Theme.highlightColor }
-                GradientStop { position: 1.0; color: Qt.darker(Kirigami.Theme.highlightColor, 1.5) }
+                GradientStop { position: 0.0; color: "#2563eb" } // blue-600
+                GradientStop { position: 0.5; color: "#0284c7" } // sky-600
+                GradientStop { position: 1.0; color: "#4338ca" } // indigo-700
             }
             
             Kirigami.Icon {
@@ -176,13 +177,20 @@ DiscoverPage {
                 }
                 spacing: Kirigami.Units.smallSpacing
 
-                QQC2.Label {
-                    Layout.fillWidth: true
-                    text: i18nc("@info", "★ DESTAQUE DA SEMANA")
-                    font.weight: Font.Bold
-                    font.pixelSize: Math.round(Kirigami.Theme.defaultFont.pixelSize * 0.8)
-                    color: "white"
-                    opacity: 0.9
+                Rectangle {
+                    color: Qt.rgba(1, 1, 1, 0.2) // bg-white/20
+                    radius: height / 2
+                    implicitWidth: destaqueLabel.implicitWidth + Kirigami.Units.largeSpacing
+                    implicitHeight: destaqueLabel.implicitHeight + Kirigami.Units.smallSpacing
+
+                    QQC2.Label {
+                        id: destaqueLabel
+                        anchors.centerIn: parent
+                        text: i18nc("@info", "★ DESTAQUE DA SEMANA")
+                        font.weight: Font.Bold
+                        font.pixelSize: Math.round(Kirigami.Theme.defaultFont.pixelSize * 0.8)
+                        color: "white"
+                    }
                 }
 
                 Kirigami.Heading {
@@ -283,13 +291,14 @@ DiscoverPage {
 
         Kirigami.Heading {
             id: recentlyUpdatedHeading
-            Layout.topMargin: page.padding
-            // Need to undo some the row spacing of the parent layout which looks bad here
-            Layout.bottomMargin: -(apps.rowSpacing / 2)
+            Layout.topMargin: Kirigami.Units.largeSpacing
+            Layout.bottomMargin: Kirigami.Units.smallSpacing
             Layout.columnSpan: apps.columns
             Layout.fillWidth: true
             text: i18nc("@title:group", "Newly Published & Recently Updated")
             wrapMode: Text.Wrap
+            level: 2
+            font.weight: Font.Bold
             visible: recentlyUpdatedRepeater.count > 0 && !featuredModel.isFetching
         }
 
@@ -334,13 +343,14 @@ DiscoverPage {
 
         Kirigami.Heading {
             id: gamesHeading
-            Layout.topMargin: page.padding
-            // Need to undo some the row spacing of the parent layout which looks bad here
-            Layout.bottomMargin: -(apps.rowSpacing / 2)
+            Layout.topMargin: Kirigami.Units.largeSpacing
+            Layout.bottomMargin: Kirigami.Units.smallSpacing
             Layout.columnSpan: apps.columns
             Layout.fillWidth: true
             text: i18nc("@title:group", "Highest-Rated Games")
             wrapMode: Text.Wrap
+            level: 2
+            font.weight: Font.Bold
             visible: gamesRep.count > 0 && !featuredModel.isFetching
         }
 
@@ -370,7 +380,9 @@ DiscoverPage {
         QQC2.Button {
             text: i18nc("@action:button", "See More")
             icon.name: Qt.application.layoutDirection === Qt.LeftToRight ? "go-next-symbolic" : "go-next-rtl-symbolic"
+            flat: false
             Layout.columnSpan: apps.columns
+            Layout.alignment: Qt.AlignLeft
             // Nicer to have the arrow on the side it's pointing to
             LayoutMirroring.enabled: Qt.application.layoutDirection === Qt.LeftToRight
             onClicked: Navigation.openCategory(Discover.CategoryModel.findCategoryByName("Games"))
@@ -391,11 +403,14 @@ DiscoverPage {
         }
 
         Kirigami.Heading {
-            Layout.topMargin: page.padding
+            Layout.topMargin: Kirigami.Units.largeSpacing
+            Layout.bottomMargin: Kirigami.Units.smallSpacing
             Layout.columnSpan: apps.columns
             Layout.fillWidth: true
             text: i18nc("@title:group", "Highest-Rated Developer Tools")
             wrapMode: Text.Wrap
+            level: 2
+            font.weight: Font.Bold
             visible: devRep.count > 0 && !featuredModel.isFetching
         }
 
@@ -427,7 +442,9 @@ DiscoverPage {
         QQC2.Button {
             text: i18nc("@action:button", "See More")
             icon.name: Qt.application.layoutDirection === Qt.LeftToRight ? "go-next-symbolic" : "go-next-rtl-symbolic"
+            flat: false
             Layout.columnSpan: apps.columns
+            Layout.alignment: Qt.AlignLeft
             // Nicer to have the arrow on the side it's pointing to
             LayoutMirroring.enabled: Qt.application.layoutDirection === Qt.LeftToRight
             onClicked: Navigation.openCategory(Discover.CategoryModel.findCategoryByName("Development"))
