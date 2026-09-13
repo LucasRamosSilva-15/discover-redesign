@@ -139,12 +139,23 @@ Kirigami.GlobalDrawer {
 
     footer: QQC2.Control {
         visible: true // Always visible to show the application version
+        padding: 0
 
         contentItem: ColumnLayout {
             spacing: 0
 
-            Kirigami.Separator {
+            Item {
                 Layout.fillWidth: true
+                Layout.topMargin: -10 // Subir um pouquinho para encostar na barra de rolagem
+                height: 1
+
+                Rectangle {
+                    width: drawer.width
+                    height: 1
+                    color: Kirigami.Theme.textColor
+                    opacity: 0.15
+                    anchors.centerIn: parent
+                }
             }
 
             RowLayout {

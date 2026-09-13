@@ -57,8 +57,14 @@ Kirigami.ApplicationWindow {
             QQC2.ToolButton {
                 icon.name: Qt.application.layoutDirection === Qt.LeftToRight ? "go-previous" : "go-next"
                 icon.color: "transparent"
-                enabled: window.pageStack.currentIndex > 0
-                onClicked: window.pageStack.pop()
+                enabled: window.pageStack.depth > 1 || (window.pageStack.currentItem && window.pageStack.currentItem.objectName !== "featured")
+                onClicked: {
+                    if (window.pageStack.depth > 1) {
+                        window.pageStack.pop()
+                    } else {
+                        Navigation.openHome()
+                    }
+                }
             }
             
             QQC2.ToolButton {
