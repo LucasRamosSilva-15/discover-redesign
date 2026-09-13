@@ -205,7 +205,7 @@ DiscoverPage {
         bottomMargin: Kirigami.Units.largeSpacing * 2
         
         readonly property int availableWidth: Math.max(1, width - leftMargin - rightMargin)
-        readonly property int columnsCount: availableWidth > Kirigami.Units.gridUnit * 36 ? 2 : 1
+        readonly property int columnsCount: availableWidth > Kirigami.Units.gridUnit * 50 ? 3 : (availableWidth > Kirigami.Units.gridUnit * 30 ? 2 : 1)
         cellWidth: Math.floor(availableWidth / columnsCount)
         cellHeight: Math.round(Kirigami.Units.gridUnit * 5.8)
         
@@ -217,7 +217,7 @@ DiscoverPage {
             
             Rectangle {
                 id: heroBannerItem
-                width: Math.min(parent.width, 1024)
+                width: parent.width
                 height: bannerLayout.implicitHeight + Kirigami.Units.largeSpacing * 4
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.top: parent.top
@@ -300,8 +300,24 @@ DiscoverPage {
         
         footer: Item {
             id: appViewFooter
-            height: appsModel.busy ? Kirigami.Units.gridUnit * 8 : Kirigami.Units.gridUnit
+            height: (appsModel.busy && appsView.count > 0) ? Kirigami.Units.gridUnit * 5 : Kirigami.Units.gridUnit
             width: appsView.availableWidth
+
+            RowLayout {
+                anchors.centerIn: parent
+                visible: appsView.count > 0 && appsModel.busy
+                spacing: Kirigami.Units.largeSpacing
+
+                QQC2.ProgressBar {
+                    indeterminate: true
+                    implicitWidth: Kirigami.Units.gridUnit * 12
+                }
+
+                QQC2.Label {
+                    text: i18n("Procurando mais aplicativos…")
+                    opacity: 0.7
+                }
+            }
         }
 
         Component.onCompleted: {
@@ -413,31 +429,12 @@ DiscoverPage {
             text: i18n("Search")
         }
 
-        Item {
-            id: loadingHolder
-            parent: appsView.count === 0 ? appsView : appsView.footerItem
-            anchors.fill: parent
-            visible: appsModel.busy && (appsView.count === 0 || appsView.atYEnd)
-            ColumnLayout {
-                anchors.centerIn: parent
-                opacity: parent.visible ? 0.5 : 0
-                Kirigami.Heading {
-                    id: headingText
-                    Layout.alignment: Qt.AlignCenter
-                    level: 2
-                    text: i18n("Still looking…")
-                }
-                QQC2.BusyIndicator {
-                    id: busyIndicator
-                    Layout.alignment: Qt.AlignCenter
-                    running: parent.visible
-                    Layout.preferredWidth: Kirigami.Units.gridUnit * 4
-                    Layout.preferredHeight: Kirigami.Units.gridUnit * 4
-                }
-                Behavior on opacity {
-                    PropertyAnimation { duration: Kirigami.Units.longDuration; easing.type: Easing.InOutQuad }
-                }
-            }
+        Kirigami.LoadingPlaceholder {
+            anchors.centerIn: parent
+            anchors.verticalCenterOffset: ((page.name !== "" || page.isInstalledPage) && !page.searchPage) ? Kirigami.Units.gridUnit * 4 : 0
+            visible: appsView.count === 0 && appsModel.busy
+            text: i18n("Carregando aplicativos…")
         }
+
     }
 }
