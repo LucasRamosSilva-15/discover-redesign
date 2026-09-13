@@ -35,6 +35,7 @@ DiscoverPage {
     property bool showRating: true
     property bool showSize: false
     property bool searchPage: false
+    readonly property bool isInstalledPage: page.stateFilter === Discover.AbstractResource.Installed
 
     property bool canNavigate: true
     readonly property alias subcategories: appsModel.subcategories
@@ -78,6 +79,12 @@ DiscoverPage {
 
     Kirigami.Theme.colorSet: Kirigami.Theme.Window
     Kirigami.Theme.inherit: false
+
+    onIsCurrentPageChanged: {
+        if (isCurrentPage) {
+            appsView.positionViewAtBeginning()
+        }
+    }
 
     onSearchChanged: {
         if (search.length > 0) {
@@ -206,7 +213,7 @@ DiscoverPage {
             id: heroBannerWrapper
             width: appsView.availableWidth
             height: visible ? heroBannerItem.height + Kirigami.Units.largeSpacing * 2 : 0
-            visible: page.name !== "" && !page.searchPage && page.stateFilter !== Discover.AbstractResource.Installed // Only show for categories
+            visible: (page.name !== "" || page.isInstalledPage) && !page.searchPage
             
             Rectangle {
                 id: heroBannerItem
@@ -220,13 +227,13 @@ DiscoverPage {
                 
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
-                    GradientStop { position: 0.0; color: "#2563eb" } // blue-600
-                    GradientStop { position: 0.5; color: "#0284c7" } // sky-600
-                    GradientStop { position: 1.0; color: "#4338ca" } // indigo-700
+                    GradientStop { position: 0.0; color: page.isInstalledPage ? "#10b981" : "#2563eb" } // emerald-500 / blue-600
+                    GradientStop { position: 0.5; color: page.isInstalledPage ? "#059669" : "#0284c7" } // emerald-600 / sky-600
+                    GradientStop { position: 1.0; color: page.isInstalledPage ? "#0f766e" : "#4338ca" } // teal-700 / indigo-700
                 }
                 
                 Kirigami.Icon {
-                    source: page.iconName
+                    source: page.isInstalledPage ? "package-x-generic" : page.iconName
                     width: Kirigami.Units.iconSizes.huge * 2
                     height: width
                     anchors {
@@ -260,7 +267,7 @@ DiscoverPage {
                             anchors.centerIn: parent
                             width: Kirigami.Units.iconSizes.large
                             height: width
-                            source: page.iconName
+                            source: page.isInstalledPage ? "package-x-generic" : page.iconName
                             color: "white"
                         }
                     }
@@ -270,14 +277,16 @@ DiscoverPage {
                         Layout.fillWidth: true
                         
                         Kirigami.Heading {
-                            text: page.name
+                            text: page.isInstalledPage ? i18n("Aplicativos Instalados") : page.name
                             level: 1
                             font.weight: Font.Bold
                             color: "white"
                         }
                         
                         QQC2.Label {
-                            text: page.categoryObject && page.categoryObject.comment ? page.categoryObject.comment : i18n("Explore milhares de ferramentas confiáveis para o seu desktop.")
+                            text: page.isInstalledPage
+                                ? i18n("Gerencie os pacotes e softwares presentes no seu sistema.")
+                                : (page.categoryObject && page.categoryObject.comment ? page.categoryObject.comment : i18n("Explore milhares de ferramentas confiáveis para o seu desktop."))
                             color: "white"
                             opacity: 0.9
                             wrapMode: Text.WordWrap
@@ -294,8 +303,9 @@ DiscoverPage {
             height: appsModel.busy ? Kirigami.Units.gridUnit * 8 : Kirigami.Units.gridUnit
             width: appsView.availableWidth
         }
-        onActiveFocusChanged: if (activeFocus && currentIndex === -1) {
-            currentIndex = 0;
+
+        Component.onCompleted: {
+            positionViewAtBeginning()
         }
 
         model: Discover.ResourcesProxyModel {
@@ -308,6 +318,8 @@ DiscoverPage {
             onBusyChanged: {
                 if (busy) {
                     appsView.currentIndex = -1
+                } else {
+                    appsView.positionViewAtBeginning()
                 }
             }
         }
