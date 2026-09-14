@@ -37,6 +37,8 @@ DiscoverPage {
 
     header: Item {
         implicitWidth: page.width
+        width: page.width
+        height: implicitHeight
         implicitHeight: inlineCol.implicitHeight > 0 ? inlineCol.implicitHeight + Kirigami.Units.largeSpacing : 0
         visible: inlineCol.implicitHeight > 0
 
@@ -84,6 +86,7 @@ DiscoverPage {
         // Hero Banner Header
         header: Item {
             width: sourcesView.width
+            height: implicitHeight
             implicitHeight: heroContainer.height + Kirigami.Units.largeSpacing * 2
 
             Item {
@@ -172,7 +175,8 @@ DiscoverPage {
             required property string section
 
             width: sourcesView.width
-            implicitHeight: sectionInner.implicitHeight + Kirigami.Units.largeSpacing * 1.5
+            height: implicitHeight
+            implicitHeight: sectionInner.height + Kirigami.Units.largeSpacing * 1.5
 
             readonly property Discover.AbstractSourcesBackend backend: Discover.SourcesModel.sourcesBackendByName(section)
             readonly property Discover.AbstractResourcesBackend resourcesBackend: backend ? backend.resourcesBackend : null
@@ -210,11 +214,14 @@ DiscoverPage {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: Kirigami.Units.smallSpacing
+                height: implicitHeight
                 implicitHeight: sectionRow.implicitHeight
 
                 RowLayout {
                     id: sectionRow
-                    anchors.fill: parent
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
                     spacing: Kirigami.Units.largeSpacing
 
                     Kirigami.Heading {
@@ -356,7 +363,8 @@ DiscoverPage {
             readonly property bool isLast: (ListView.nextSection !== ListView.section)
 
             width: sourcesView.width
-            implicitHeight: rowCard.implicitHeight + (isLast ? Kirigami.Units.largeSpacing : 0)
+            height: implicitHeight
+            implicitHeight: rowCard.height + (isLast ? Kirigami.Units.largeSpacing : 0)
 
             enabled: model.display.length > 0 && model.enabled
             Keys.onReturnPressed: enabledBox.clicked()
@@ -367,13 +375,16 @@ DiscoverPage {
                 width: Math.min(parent.width - Kirigami.Units.largeSpacing * 2, 1024)
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.top: parent.top
+                height: implicitHeight
                 implicitHeight: rowContent.implicitHeight + Kirigami.Units.largeSpacing * 1.5
 
-                color: itemMouseArea.containsMouse
-                    ? Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.highlightColor, Kirigami.Theme.backgroundColor, 0.04)
+                color: rowHoverHandler.hovered
+                    ? Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.highlightColor, Kirigami.Theme.backgroundColor, 0.08)
                     : Kirigami.Theme.backgroundColor
 
-                border.color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.12)
+                border.color: rowHoverHandler.hovered
+                    ? Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.highlightColor, Kirigami.Theme.backgroundColor, 0.35)
+                    : Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.12)
                 border.width: 1
 
                 topLeftRadius: delegate.isFirst ? 16 : 0
@@ -381,11 +392,15 @@ DiscoverPage {
                 bottomLeftRadius: delegate.isLast ? 16 : 0
                 bottomRightRadius: delegate.isLast ? 16 : 0
 
-                MouseArea {
-                    id: itemMouseArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    acceptedButtons: Qt.NoButton
+                HoverHandler {
+                    id: rowHoverHandler
+                }
+
+                Behavior on color {
+                    ColorAnimation { duration: Kirigami.Units.shortDuration }
+                }
+                Behavior on border.color {
+                    ColorAnimation { duration: Kirigami.Units.shortDuration }
                 }
 
                 // Subtle divider between rows
@@ -400,11 +415,11 @@ DiscoverPage {
 
                 RowLayout {
                     id: rowContent
-                    anchors.fill: parent
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
                     anchors.leftMargin: Kirigami.Units.largeSpacing * 1.2
                     anchors.rightMargin: Kirigami.Units.largeSpacing * 1.2
-                    anchors.topMargin: Kirigami.Units.largeSpacing * 0.75
-                    anchors.bottomMargin: Kirigami.Units.largeSpacing * 0.75
                     spacing: Kirigami.Units.largeSpacing
 
                     QQC2.CheckBox {
@@ -535,6 +550,7 @@ DiscoverPage {
         // Footer: Missing Backends (Infraestruturas Faltantes)
         footer: Item {
             width: sourcesView.width
+            height: implicitHeight
             implicitHeight: footerInner.implicitHeight + Kirigami.Units.gridUnit * 3
 
             ColumnLayout {
