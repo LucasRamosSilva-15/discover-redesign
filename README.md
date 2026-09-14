@@ -2,7 +2,7 @@
 
 Discover helps you find and install applications, games, and tools. You can search or browse by category, and look at screenshots and read reviews to help you pick the perfect app.
 
-![Discover window](https://cdn.kde.org/screenshots/plasma-discover/plasma-discover.png)
+![Discover window](/home/lucasramos/Documentos/discover-redesign/capturas/image.png)
 
 ## Features
 

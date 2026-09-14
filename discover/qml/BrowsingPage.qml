@@ -118,21 +118,6 @@ DiscoverPage {
                 }
                 spacing: Kirigami.Units.smallSpacing
 
-                Rectangle {
-                    color: Qt.rgba(1, 1, 1, 0.2) // bg-white/20
-                    radius: height / 2
-                    implicitWidth: destaqueLabel.implicitWidth + Kirigami.Units.largeSpacing
-                    implicitHeight: destaqueLabel.implicitHeight + Kirigami.Units.smallSpacing
-
-                    QQC2.Label {
-                        id: destaqueLabel
-                        anchors.centerIn: parent
-                        text: i18nc("@info", "★ DESTAQUE DA SEMANA")
-                        font.weight: Font.Bold
-                        font.pixelSize: Math.round(Kirigami.Theme.defaultFont.pixelSize * 0.8)
-                        color: "white"
-                    }
-                }
 
                 Kirigami.Heading {
                     Layout.fillWidth: true
