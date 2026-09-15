@@ -40,6 +40,24 @@ DiscoverPage {
     readonly property bool isTechnicalPackage: application.type == Discover.AbstractResource.ApplicationSupport
                                             || application.type == Discover.AbstractResource.System
 
+    readonly property string formattedReleaseDate: {
+        const d = application.releaseDate;
+        if (!d) return "";
+        try {
+            if (d instanceof Date) {
+                if (isNaN(d.getTime()) || d.getFullYear() < 1980) return "";
+                return d.toLocaleDateString(Qt.locale());
+            }
+            if (typeof d.isValid === "function") {
+                if (!d.isValid()) return "";
+                return d.toString(Qt.DefaultLocaleShortDate);
+            }
+            return "";
+        } catch (e) {
+            return "";
+        }
+    }
+
     function colorForLicenseType(licenseType: string): string {
         switch(licenseType) {
             case "free":
@@ -403,28 +421,206 @@ DiscoverPage {
                     }
                 }
 
-                // Changelog section
-                ColumnLayout {
-                    spacing: Kirigami.Units.smallSpacing
-                    visible: changelogLabel.visible
+                // What's New & Updates Section
+                QQC2.Pane {
+                    id: whatsNewCard
+                    Layout.fillWidth: true
+                    padding: Kirigami.Units.largeSpacing
 
-                    Kirigami.Heading {
-                        text: i18n("What’s New")
-                        level: 2
-                        type: Kirigami.Heading.Type.Primary
-                        wrapMode: Text.Wrap
+                    background: Rectangle {
+                        radius: 16
+                        color: Kirigami.Theme.backgroundColor
+                        border.color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.08)
+                        border.width: 1
                     }
 
-                    QQC2.Label {
-                        id: changelogLabel
-                        Layout.fillWidth: true
-                        visible: text !== "" && text !== "<br />"
-                        wrapMode: Text.WordWrap
-                        Component.onCompleted: appInfo.application.fetchChangelog()
-                        Connections {
-                            target: appInfo.application
-                            function onChangelogFetched(changelog) {
-                                changelogLabel.text = changelog
+                    property string changelogText: ""
+                    property bool changelogLoaded: false
+                    readonly property bool hasChangelog: changelogText.trim() !== "" && changelogText.trim() !== "<br />" && changelogText.trim() !== "<br/>"
+
+                    Component.onCompleted: appInfo.application.fetchChangelog()
+                    Connections {
+                        target: appInfo.application
+                        function onChangelogFetched(changelog) {
+                            whatsNewCard.changelogText = changelog;
+                            whatsNewCard.changelogLoaded = true;
+                        }
+                    }
+
+                    visible: !appInfo.isOfflineUpgrade && !appInfo.isTechnicalPackage && (appInfo.application.versionString.length > 0 || whatsNewCard.hasChangelog)
+
+                    contentItem: ColumnLayout {
+                        spacing: Kirigami.Units.largeSpacing
+
+                        // Header Row
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: Kirigami.Units.largeSpacing
+
+                            // Icon badge
+                            Rectangle {
+                                Layout.preferredWidth: 42
+                                Layout.preferredHeight: 42
+                                radius: 12
+                                color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.highlightColor, 0.12)
+                                border.color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.highlightColor, 0.25)
+                                border.width: 1
+
+                                Kirigami.Icon {
+                                    anchors.centerIn: parent
+                                    width: 22
+                                    height: 22
+                                    source: "update-none"
+                                    color: Kirigami.Theme.highlightColor
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 4
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: Kirigami.Units.smallSpacing
+
+                                    Kirigami.Heading {
+                                        text: i18n("What’s New")
+                                        level: 2
+                                        font.weight: Font.Bold
+                                        color: Kirigami.Theme.textColor
+                                    }
+
+                                    Item { Layout.fillWidth: true }
+
+                                    // Update Available pill
+                                    Rectangle {
+                                        visible: appInfo.application.canUpgrade
+                                        implicitWidth: upgradeBadgeLayout.implicitWidth + 16
+                                        implicitHeight: 24
+                                        radius: 12
+                                        color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.positiveTextColor, 0.15)
+                                        border.color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.positiveTextColor, 0.4)
+                                        border.width: 1
+
+                                        RowLayout {
+                                            id: upgradeBadgeLayout
+                                            anchors.centerIn: parent
+                                            spacing: 4
+                                            Kirigami.Icon {
+                                                source: "update-none"
+                                                width: 12
+                                                height: 12
+                                                color: Kirigami.Theme.positiveTextColor
+                                            }
+                                            QQC2.Label {
+                                                text: appInfo.application.upgradeText.length > 0
+                                                      ? appInfo.application.upgradeText.split("\u009C")[0]
+                                                      : i18n("Update available")
+                                                font.pointSize: Kirigami.Theme.smallFont.pointSize
+                                                font.weight: Font.DemiBold
+                                                color: Kirigami.Theme.positiveTextColor
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Badges: Version and Release Date
+                                RowLayout {
+                                    spacing: Kirigami.Units.smallSpacing
+
+                                    // Version badge
+                                    Rectangle {
+                                        visible: appInfo.application.versionString.length > 0
+                                        implicitWidth: versionBadgeLabel.implicitWidth + 16
+                                        implicitHeight: 24
+                                        radius: 6
+                                        color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.highlightColor, 0.12)
+                                        border.color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.highlightColor, 0.3)
+                                        border.width: 1
+
+                                        QQC2.Label {
+                                            id: versionBadgeLabel
+                                            anchors.centerIn: parent
+                                            text: i18n("Version %1", appInfo.application.versionString)
+                                            font.pointSize: Kirigami.Theme.smallFont.pointSize
+                                            font.weight: Font.Bold
+                                            color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.highlightColor, Kirigami.Theme.textColor, 0.2)
+                                        }
+                                    }
+
+                                    // Release date badge
+                                    Rectangle {
+                                        visible: appInfo.formattedReleaseDate.length > 0
+                                        implicitWidth: dateBadgeRow.implicitWidth + 16
+                                        implicitHeight: 24
+                                        radius: 6
+                                        color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.05)
+                                        border.color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.12)
+                                        border.width: 1
+
+                                        RowLayout {
+                                            id: dateBadgeRow
+                                            anchors.centerIn: parent
+                                            spacing: 4
+                                            Kirigami.Icon {
+                                                source: "view-history"
+                                                Layout.preferredWidth: 12
+                                                Layout.preferredHeight: 12
+                                                color: Kirigami.Theme.disabledTextColor
+                                            }
+                                            QQC2.Label {
+                                                text: appInfo.formattedReleaseDate
+                                                font.pointSize: Kirigami.Theme.smallFont.pointSize
+                                                color: Kirigami.Theme.textColor
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Divider line
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 1
+                            implicitHeight: 1
+                            color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.08)
+                        }
+
+                        // Changelog content
+                        Kirigami.SelectableLabel {
+                            id: changelogLabel
+                            Layout.fillWidth: true
+                            wrapMode: Text.WordWrap
+                            textFormat: TextEdit.RichText
+                            visible: whatsNewCard.hasChangelog
+                            text: whatsNewCard.changelogText
+                            font.pointSize: Kirigami.Theme.defaultFont.pointSize
+                            color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.textColor, Kirigami.Theme.backgroundColor, 0.15)
+                            onLinkActivated: link => Qt.openUrlExternally(link)
+                        }
+
+                        // Informational placeholder when changelog is not provided
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: Kirigami.Units.smallSpacing
+                            visible: !whatsNewCard.hasChangelog
+
+                            Kirigami.Icon {
+                                source: "dialog-information"
+                                Layout.preferredWidth: 16
+                                Layout.preferredHeight: 16
+                                color: Kirigami.Theme.disabledTextColor
+                            }
+
+                            QQC2.Label {
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
+                                font.pointSize: Kirigami.Theme.smallFont.pointSize
+                                color: Kirigami.Theme.disabledTextColor
+                                text: whatsNewCard.changelogLoaded
+                                      ? i18n("The developer has not provided detailed release notes for this version.")
+                                      : i18n("Loading release notes…")
                             }
                         }
                     }
