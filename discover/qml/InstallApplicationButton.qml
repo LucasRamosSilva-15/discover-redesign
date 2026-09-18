@@ -99,21 +99,38 @@ ConditionalLoader {
 
         QQC2.Button {
             id: invokeButton
-            visible: !root.hideInvokeButton && root.application.isInstalled && root.application.canExecute && !listener.isActive
+            visible: !root.hideInvokeButton && root.application && root.application.isInstalled && root.application.canExecute && !listener.isActive
             text: root.application.executeLabel
             icon.name: "media-playback-start-symbolic"
             onClicked: root.application.invokeApplication()
+        }
+
+        QQC2.Button {
+            id: updateButton
+            visible: !root.hideInvokeButton && root.application && root.application.isInstalled && root.application.canUpgrade && !listener.isActive
+            text: i18nd("plasma-discover-notifier", "Update")
+            icon.name: "update-none"
+            activeFocusOnTab: root.buttonActiveFocusOnTab
+            highlighted: true
+
+            QQC2.ToolTip.text: i18nc("@info:tooltip", "Update this application to the latest version")
+            QQC2.ToolTip.visible: hovered || activeFocus
+            QQC2.ToolTip.delay: Kirigami.Units.toolTipDelay
+
+            onClicked: {
+                Discover.ResourcesModel.installApplication(root.application);
+            }
         }
 
         // Install/Remove button
         QQC2.Button {
             id: installOrRemoveButton
 
-            visible: !root.application.isInstalled || root.application.isRemovable
-            enabled: root.application.state !== Discover.AbstractResource.Broken
+            visible: !root.application || !root.application.isInstalled || root.application.isRemovable
+            enabled: root.application && root.application.state !== Discover.AbstractResource.Broken
             activeFocusOnTab: root.buttonActiveFocusOnTab
 
-            display: invokeButton.visible ? QQC2.AbstractButton.IconOnly : root.installOrRemoveButtonDisplayStyle
+            display: (invokeButton.visible || updateButton.visible) ? QQC2.AbstractButton.IconOnly : root.installOrRemoveButtonDisplayStyle
             text: root.action.text
             icon.name: root.action.icon.name
             icon.color: root.action.icon.color

@@ -70,6 +70,13 @@ QString PackageKitResource::availablePackageId() const
         return *pkgids.constBegin();
     }
 
+    if (const_cast<PackageKitResource *>(this)->isInstalled()) {
+        const auto installed = installedPackageId();
+        if (!installed.isEmpty()) {
+            return installed;
+        }
+    }
+
     const auto it = m_packages.constFind(PackageKit::Transaction::InfoAvailable);
     if (it != m_packages.constEnd()) {
         return it->first();
@@ -161,7 +168,21 @@ QString PackageKitResource::availableVersion() const
 
 QString PackageKitResource::installedVersion() const
 {
-    return PackageKit::Daemon::packageVersion(installedPackageId());
+    const auto pkgId = installedPackageId();
+    if (!pkgId.isEmpty()) {
+        return PackageKit::Daemon::packageVersion(pkgId);
+    }
+    if (const_cast<PackageKitResource *>(this)->isInstalled()) {
+        if (m_cachedInstalledVersion.isEmpty()) {
+            QProcess rpm;
+            rpm.start(QStringLiteral("rpm"), {QStringLiteral("-q"), QStringLiteral("--qf"), QStringLiteral("%{VERSION}-%{RELEASE}"), packageName()});
+            if (rpm.waitForFinished(200) && rpm.exitCode() == 0) {
+                m_cachedInstalledVersion = QString::fromUtf8(rpm.readAllStandardOutput()).trimmed();
+            }
+        }
+        return m_cachedInstalledVersion;
+    }
+    return {};
 }
 
 quint64 PackageKitResource::size()
@@ -234,6 +255,7 @@ void PackageKitResource::addPackageId(PackageKit::Transaction::Info info, const 
         Q_EMIT stateChanged();
     }
 
+    m_cachedInstalledVersion.clear();
     Q_EMIT versionsChanged();
 }
 

@@ -181,7 +181,12 @@ ColumnLayout {
                 }
 
                 QQC2.Label {
-                    text: fullComponent.application.versionString.length > 0 ? fullComponent.application.versionString : "-"
+                    text: {
+                        if (fullComponent.application.availableVersion.length > 0) {
+                            return fullComponent.application.availableVersion;
+                        }
+                        return fullComponent.application.versionString.length > 0 ? fullComponent.application.versionString : "-";
+                    }
                     font.weight: Font.DemiBold
                     font.pointSize: Kirigami.Theme.defaultFont.pointSize
                     color: Kirigami.Theme.textColor

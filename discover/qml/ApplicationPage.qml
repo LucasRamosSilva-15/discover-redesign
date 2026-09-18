@@ -422,34 +422,65 @@ DiscoverPage {
                 }
 
                 // What's New & Updates Section
-                QQC2.Pane {
+                Rectangle {
                     id: whatsNewCard
                     Layout.fillWidth: true
-                    padding: Kirigami.Units.largeSpacing
-
-                    background: Rectangle {
-                        radius: 16
-                        color: Kirigami.Theme.backgroundColor
-                        border.color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.08)
-                        border.width: 1
-                    }
+                    radius: 16
+                    color: Kirigami.Theme.backgroundColor
+                    border.color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.08)
+                    border.width: 1
 
                     property string changelogText: ""
                     property bool changelogLoaded: false
                     readonly property bool hasChangelog: changelogText.trim() !== "" && changelogText.trim() !== "<br />" && changelogText.trim() !== "<br/>"
 
-                    Component.onCompleted: appInfo.application.fetchChangelog()
+                    readonly property string latestVersion: {
+                        if (appInfo.application.availableVersion.length > 0) {
+                            return appInfo.application.availableVersion;
+                        }
+                        return appInfo.application.versionString;
+                    }
+
+                    function reloadChangelog() {
+                        changelogText = "";
+                        changelogLoaded = false;
+                        Qt.callLater(() => {
+                            if (appInfo.application) {
+                                appInfo.application.fetchChangelog();
+                            }
+                        });
+                    }
+
+                    Component.onCompleted: reloadChangelog()
+
+                    Connections {
+                        target: appInfo
+                        function onApplicationChanged() {
+                            whatsNewCard.reloadChangelog();
+                        }
+                    }
+
                     Connections {
                         target: appInfo.application
+                        ignoreUnknownSignals: true
                         function onChangelogFetched(changelog) {
                             whatsNewCard.changelogText = changelog;
                             whatsNewCard.changelogLoaded = true;
                         }
                     }
 
-                    visible: !appInfo.isOfflineUpgrade && !appInfo.isTechnicalPackage && (appInfo.application.versionString.length > 0 || whatsNewCard.hasChangelog)
+                    visible: !appInfo.isOfflineUpgrade && !appInfo.isTechnicalPackage && (whatsNewCard.latestVersion.length > 0 || whatsNewCard.hasChangelog)
 
-                    contentItem: ColumnLayout {
+                    implicitHeight: whatsNewColumn.implicitHeight + (Kirigami.Units.largeSpacing * 2)
+                    Layout.preferredHeight: implicitHeight
+                    height: implicitHeight
+
+                    ColumnLayout {
+                        id: whatsNewColumn
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: Kirigami.Units.largeSpacing
                         spacing: Kirigami.Units.largeSpacing
 
                         // Header Row
@@ -513,9 +544,15 @@ DiscoverPage {
                                                 color: Kirigami.Theme.positiveTextColor
                                             }
                                             QQC2.Label {
-                                                text: appInfo.application.upgradeText.length > 0
-                                                      ? appInfo.application.upgradeText.split("\u009C")[0]
-                                                      : i18n("Update available")
+                                                text: {
+                                                    if (appInfo.application.upgradeText.length > 0) {
+                                                        return appInfo.application.upgradeText.split("\u009C")[0];
+                                                    }
+                                                    if (appInfo.application.installedVersion.length > 0 && whatsNewCard.latestVersion.length > 0) {
+                                                        return appInfo.application.installedVersion + " → " + whatsNewCard.latestVersion;
+                                                    }
+                                                    return i18n("Update available");
+                                                }
                                                 font.pointSize: Kirigami.Theme.smallFont.pointSize
                                                 font.weight: Font.DemiBold
                                                 color: Kirigami.Theme.positiveTextColor
@@ -528,9 +565,9 @@ DiscoverPage {
                                 RowLayout {
                                     spacing: Kirigami.Units.smallSpacing
 
-                                    // Version badge
+                                    // Latest / Current Version badge
                                     Rectangle {
-                                        visible: appInfo.application.versionString.length > 0
+                                        visible: whatsNewCard.latestVersion.length > 0
                                         implicitWidth: versionBadgeLabel.implicitWidth + 16
                                         implicitHeight: 24
                                         radius: 6
@@ -539,12 +576,48 @@ DiscoverPage {
                                         border.width: 1
 
                                         QQC2.Label {
-                                            id: versionBadgeLabel
+                                             id: versionBadgeLabel
+                                             anchors.centerIn: parent
+                                             text: {
+                                                 if (appInfo.application.canUpgrade) {
+                                                     return i18n("Latest: %1", whatsNewCard.latestVersion);
+                                                 }
+                                                 if (appInfo.application.isInstalled) {
+                                                     return i18n("Installed: %1", appInfo.application.installedVersion.length > 0 ? appInfo.application.installedVersion : whatsNewCard.latestVersion);
+                                                 }
+                                                 return i18n("Version %1", whatsNewCard.latestVersion);
+                                             }
+                                             font.pointSize: Kirigami.Theme.smallFont.pointSize
+                                             font.weight: Font.Bold
+                                             color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.highlightColor, Kirigami.Theme.textColor, 0.2)
+                                        }
+                                    }
+
+                                    // Installed Version badge (if update available)
+                                    Rectangle {
+                                        readonly property string installedVer: {
+                                            if (appInfo.application.installedVersion.length > 0) {
+                                                return appInfo.application.installedVersion;
+                                            }
+                                            if (appInfo.application.upgradeText.indexOf(" → ") > 0) {
+                                                return appInfo.application.upgradeText.split(" → ")[0];
+                                            }
+                                            return "";
+                                        }
+                                        visible: appInfo.application.canUpgrade && installedVer.length > 0
+                                        implicitWidth: installedBadgeLabel.implicitWidth + 16
+                                        implicitHeight: 24
+                                        radius: 6
+                                        color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.05)
+                                        border.color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.backgroundColor, Kirigami.Theme.textColor, 0.12)
+                                        border.width: 1
+
+                                        QQC2.Label {
+                                            id: installedBadgeLabel
                                             anchors.centerIn: parent
-                                            text: i18n("Version %1", appInfo.application.versionString)
+                                            text: i18n("Installed: %1", parent.installedVer)
                                             font.pointSize: Kirigami.Theme.smallFont.pointSize
-                                            font.weight: Font.Bold
-                                            color: Kirigami.ColorUtils.tintWithAlpha(Kirigami.Theme.highlightColor, Kirigami.Theme.textColor, 0.2)
+                                            color: Kirigami.Theme.disabledTextColor
                                         }
                                     }
 
@@ -588,11 +661,11 @@ DiscoverPage {
                         }
 
                         // Changelog content
-                        Kirigami.SelectableLabel {
+                        QQC2.Label {
                             id: changelogLabel
                             Layout.fillWidth: true
                             wrapMode: Text.WordWrap
-                            textFormat: TextEdit.RichText
+                            textFormat: Text.RichText
                             visible: whatsNewCard.hasChangelog
                             text: whatsNewCard.changelogText
                             font.pointSize: Kirigami.Theme.defaultFont.pointSize

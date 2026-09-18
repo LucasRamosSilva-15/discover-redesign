@@ -20,6 +20,7 @@
 #include <PackageKit/Daemon>
 #include <QDebug>
 #include <QIcon>
+#include <QProcess>
 #include <QUrlQuery>
 #include <appstream/AppStreamUtils.h>
 
@@ -266,9 +267,30 @@ QString AppPackageKitResource::versionString()
 
 QDate AppPackageKitResource::releaseDate() const
 {
-    if (const auto releases = m_appdata.releasesPlain(); !releases.isEmpty()) {
+    const auto releases = m_appdata.releasesPlain();
+    if (!releases.isEmpty()) {
         auto release = releases.indexSafe(0).value();
-        return release.timestamp().date();
+        const QString appstreamVer = release.version();
+        const QString instVer = installedVersion();
+        if (instVer.isEmpty() || appstreamVer.isEmpty() || instVer.startsWith(appstreamVer)) {
+            return release.timestamp().date();
+        }
+    }
+
+    if (const_cast<AppPackageKitResource *>(this)->isInstalled()) {
+        QProcess rpm;
+        rpm.start(QStringLiteral("rpm"), {QStringLiteral("-q"), QStringLiteral("--qf"), QStringLiteral("%{BUILDTIME}"), packageName()});
+        if (rpm.waitForFinished(200) && rpm.exitCode() == 0) {
+            bool ok = false;
+            qint64 ts = QString::fromUtf8(rpm.readAllStandardOutput()).trimmed().toLongLong(&ok);
+            if (ok && ts > 0) {
+                return QDateTime::fromSecsSinceEpoch(ts).date();
+            }
+        }
+    }
+
+    if (!releases.isEmpty()) {
+        return releases.indexSafe(0).value().timestamp().date();
     }
 
     return {};

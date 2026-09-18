@@ -406,6 +406,9 @@ AppPackageKitResource *PackageKitBackend::addComponent(const AppStream::Componen
     for (const auto &pkg : pkgNames) {
         m_packages.packageToApp[pkg] += component.id();
     }
+    if (resource->isInstalled() && resource->installedPackageId().isEmpty()) {
+        const_cast<PackageKitBackend *>(this)->resolvePackages(pkgNames);
+    }
     return resource;
 }
 
@@ -632,7 +635,11 @@ AppStream::ComponentBox PackageKitBackend::componentsById(const QString &id) con
 
 static bool needsResolveFilter(const StreamResult &result)
 {
-    return result.resource->state() == AbstractResource::Broken;
+    auto pkRes = qobject_cast<PackageKitResource *>(result.resource);
+    if (!pkRes) {
+        return false;
+    }
+    return pkRes->state() == AbstractResource::Broken || (pkRes->isInstalled() && pkRes->installedPackageId().isEmpty());
 };
 
 class PKResultsStream : public ResultsStream
@@ -935,7 +942,7 @@ Transaction *PackageKitBackend::installApplication(AbstractResource *app, const 
             appsToInstall << app;
         }
         transaction = new PKTransaction(appsToInstall, Transaction::ChangeAddonsRole);
-    } else if (!app->isInstalled()) {
+    } else if (!app->isInstalled() || app->canUpgrade()) {
         transaction = installApplication(app);
     }
 

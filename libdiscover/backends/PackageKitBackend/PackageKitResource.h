@@ -147,6 +147,7 @@ private:
     const QString m_summary;
     const QString m_name;
     QString m_changelog;
+    mutable QString m_cachedInstalledVersion;
     PackageKitDependencies m_dependencies;
     static const QStringList s_topObjects;
     static const QStringList s_bottomObjects;
